@@ -12,7 +12,7 @@ TVCast turns an Android TV / set-top box into a DLNA/UPnP MediaRenderer (DMR). A
 - **Self-built UPnP stack** (SSDP announcement + M-SEARCH, SOAP control, GENA eventing, mini HTTP server) — zero third-party protocol dependencies, ~4k lines of pure Kotlin/JVM, fully unit-testable
 - **Implicit play**: `SetAVTransportURI` alone starts playback (matches how most Chinese caster apps behave)
 - **GENA eventing**: SEQ:0 initial snapshot + incremental LastChange notifications keep the phone-side progress bar live
-- **Media3 ExoPlayer** playback engine with audio-focus handling (incl. ducking), clear error UI, and screen-resolution downsampling for photos
+- **Media3 ExoPlayer** playback engine with **FFmpeg software-decode fallback** (HEVC / AC3 / EAC3 / DTS / TrueHD / MPEG-1/2 / VP8 / VP9 / Opus / FLAC — hardware first, software fallback, a lifeline for old boxes), audio-focus handling (incl. ducking), clear error UI, and screen-resolution downsampling for photos
 - **Resident foreground service** with MulticastLock, network watchdog (IP change → re-announce with persistent UDN), and boot autostart
 - **3-screen TV UI**: standby / playing / settings (rename re-announces immediately)
 - **Fault-tolerant**: unknown actions (e.g. `X_SetAVTransportURI`) get a standard 401 fault instead of a crash
@@ -61,8 +61,7 @@ com.tvcast/
 ## Known limitations
 
 - On Android 10+ some ROMs block background activity launches; if the playing screen doesn't pop up, open the app manually (playback is not interrupted)
-- The TV banner is generated artwork (`tools/gen_banner.py`)
-- Exotic codecs unsupported by hardware decoding show an error screen (ffmpeg software-decode fallback is on the roadmap)
+- Exotic codecs unsupported by hardware decoding fall back to the bundled FFmpeg software decoder (v1.2.0+, LGPL v2.1; rebuild via `./tools/build_ffmpeg_ext.sh`, see the Chinese README for details)
 
 ## License
 

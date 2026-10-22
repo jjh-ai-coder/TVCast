@@ -8,10 +8,13 @@ import android.media.AudioManager.OnAudioFocusChangeListener
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import androidx.annotation.OptIn
 import androidx.annotation.RequiresApi
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import com.tvcast.dlna.MediaKind
@@ -30,7 +33,18 @@ import java.util.concurrent.CopyOnWriteArrayList
 class PlayerController(context: Context) : RendererPlayer {
 
   private val main = Handler(Looper.getMainLooper())
-  private val player: ExoPlayer = ExoPlayer.Builder(context).build()
+
+  // OptIn 限定在此属性：不向使用方扩散 UnstableApi 要求
+  @OptIn(UnstableApi::class)
+  private val player: ExoPlayer = ExoPlayer.Builder(context)
+    .setRenderersFactory(
+      DefaultRenderersFactory(context)
+        // ffmpeg 扩展（app/libs AAR）在类路径时：硬解优先，不支持的格式软解兜底；
+        // 兜底失败/无 AAR 时行为与默认完全一致
+        .setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON)
+        .setEnableDecoderFallback(true)
+    )
+    .build()
   private val listeners = CopyOnWriteArrayList<Runnable>()
 
   @Volatile private var _uri: String? = null

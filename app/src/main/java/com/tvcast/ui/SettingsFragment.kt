@@ -7,7 +7,9 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Switch
+import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import com.tvcast.R
 import com.tvcast.core.CastService
@@ -39,6 +41,13 @@ class SettingsFragment : Fragment() {
     }
     view.findViewById<Button>(R.id.btn_back).setOnClickListener {
       (activity as? MainActivity)?.closeSettings()
+    }
+    view.findViewById<TextView>(R.id.oss_licenses).setOnClickListener {
+      AlertDialog.Builder(requireContext())
+        .setTitle(R.string.settings_oss_licenses)
+        .setMessage(R.string.oss_licenses_text)
+        .setPositiveButton(android.R.string.ok, null)
+        .show()
     }
   }
 }

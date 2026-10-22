@@ -72,4 +72,14 @@
             android:textColor="@color/textPrimary"
             android:textSize="22sp" />
     </LinearLayout>
+
+    <TextView
+        android:id="@+id/oss_licenses"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="56dp"
+        android:padding="8dp"
+        android:text="@string/settings_oss_licenses"
+        android:textColor="@color/textDim"
+        android:textSize="16sp" />
 </LinearLayout>
