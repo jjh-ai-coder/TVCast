@@ -1,6 +1,8 @@
 # TVCast — Android TV DLNA 投屏接收端
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) [![Release](https://img.shields.io/github/v/release/jjh-ai-coder/TVCast)](https://github.com/jjh-ai-coder/TVCast/releases)
+
+[English](README.en.md)
 
 Android TV/盒子上的 DLNA/UPnP MediaRenderer（DMR）接收端。手机端任意支持 DLNA 投屏的 App（BubbleUPnP、B站、爱奇艺、腾讯视频、系统相册等）在局域网内发现电视后，即可向大屏推送视频/音乐/图片。
 

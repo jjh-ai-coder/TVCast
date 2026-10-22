@@ -58,6 +58,8 @@ class MainActivity : AppCompatActivity() {
     }
   }
 
+  // 有意不调 super：super 会结束 Activity，投屏待机页只需退到后台
+  @Suppress("MissingSuperCall")
   @Deprecated("Deprecated in Java")
   override fun onBackPressed() {
     if (settingsMode) {

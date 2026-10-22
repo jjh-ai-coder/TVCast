@@ -196,7 +196,11 @@ class EventBus(
 
     fun purgeExpired() {
         val now = clock()
-        subscriptions.entries.removeIf { it.value.expiresAtMs <= now }
+        // Collection.removeIf 需 API 24；minSdk 21 用迭代器删除
+        val iterator = subscriptions.entries.iterator()
+        while (iterator.hasNext()) {
+            if (iterator.next().value.expiresAtMs <= now) iterator.remove()
+        }
     }
 
     private fun postInitialSnapshot(sub: Subscription) {
