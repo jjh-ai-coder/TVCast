@@ -9,3 +9,4 @@ captures/
 .externalNativeBuild/
 .cxx/
 __pycache__/
+third_party/
