@@ -15,7 +15,7 @@ Android TV/盒子上的 DLNA/UPnP MediaRenderer（DMR）接收端。手机端任
 
 ## 运行时验证（已通过）
 
-- ✅ **真机实测（2026-10-22）**：v1.0.0 APK 安装到真实电视，手机可发现设备（SSDP 组播通路）并正常投屏播放
+- ✅ **真机实测（2026-10-22）**：雷鸟 65 英寸电视安装 v1.0.0 APK，**B站客户端**与**手机系统相册**投屏均正常——手机可发现设备（SSDP 组播通路），视频/图片推送后自动起播
 - ✅ 前台服务以 mediaPlayback 类型合规运行；HTTP 栈 80 → 高位端口回落符合设计
 - ✅ 待机页显示设备名 `TVCast-XXXX` 与 `http://IP:端口`
 - ✅ GET /dd.xml、SCPD、GetProtocolInfo 全部正常
@@ -64,6 +64,8 @@ com.tvcast/
 | UpnpTimeTest / MediaKindResolverTest / ProtocolInfoListTest / LastChangeXmlTest | 16 | 时间格式、类型推断、sink 列表、事件 XML 转义 |
 
 ## 真机手测清单（对应里程碑验收）
+
+已实测通过：雷鸟 65 英寸电视 + B站客户端 + 手机系统相册（2026-10-22）。
 
 1. **M1 发现**：安装 APK → 待机页显示设备名与 `http://IP:端口` → BubbleUPnP 搜到 "TVCast-XXXX"，能拉取设备描述
 2. **M2 播放**：BubbleUPnP 推公网 mp4 URL → 电视自动进入全屏播放（不发 Play 也起播）；暂停/停止/进度查询生效
