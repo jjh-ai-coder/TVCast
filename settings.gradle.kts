@@ -21,4 +21,6 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "TVCast"
+
+include(":dlna")
 include(":app")
