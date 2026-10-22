@@ -13,10 +13,9 @@ Android TV/盒子上的 DLNA/UPnP MediaRenderer（DMR）接收端。手机端任
 - 单元测试：`./gradlew :app:testDebugUnitTest`（本机已验证 **75/75 全绿**，含 fake 控制点端到端回归）
 - 也可直接用 Android Studio 打开工程（SDK 路径见 `local.properties`）
 
-## 模拟器实机验证（已通过）
+## 运行时验证（已通过）
 
-在 Android 15 x86_64 模拟器上完成真实启动与端到端投屏流程（宿主机脚本 `tools/dlna_probe.py` 扮演 DLNA 控制点）：
-
+- ✅ **真机实测（2026-10-22）**：v1.0.0 APK 安装到真实电视，手机可发现设备（SSDP 组播通路）并正常投屏播放
 - ✅ 前台服务以 mediaPlayback 类型合规运行；HTTP 栈 80 → 高位端口回落符合设计
 - ✅ 待机页显示设备名 `TVCast-XXXX` 与 `http://IP:端口`
 - ✅ GET /dd.xml、SCPD、GetProtocolInfo 全部正常
@@ -30,7 +29,7 @@ Android TV/盒子上的 DLNA/UPnP MediaRenderer（DMR）接收端。手机端任
 2. `HttpURLConnection.setRequestMethod("NOTIFY")` 被 Android 拒绝 → GENA 事件永远发不出去（NOTIFY 改为原生 Socket 手写报文）
 3. 待机页 Fragment 先于 ServiceConnection 创建导致永远显示"网络未连接"（Activity 在连接就绪后主动刷新当前页）
 
-模拟器限制说明：模拟器 NAT 网卡不支持 SSDP 组播收发（日志可见 SSDP send failed），SSDP 层由单元测试覆盖报文构造/解析，真实组播行为需在真机/WiFi 环境验证。
+模拟器限制说明：模拟器 NAT 网卡不支持 SSDP 组播收发（日志可见 SSDP send failed），该层在模拟器阶段仅由单元测试覆盖报文构造/解析，现已由真机实测闭环（见上）。
 
 ## 架构
 
