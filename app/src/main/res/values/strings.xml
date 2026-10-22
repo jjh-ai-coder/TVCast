@@ -17,6 +17,8 @@
     <string name="settings_save">保存</string>
     <string name="settings_back">返回</string>
     <string name="settings_saved">已保存</string>
+    <string name="settings_oss_licenses">开源声明</string>
+    <string name="oss_licenses_text">TVCast 使用以下开源组件：\n\n• Media3 / ExoPlayer — Apache License 2.0\n• Glide — BSD（部分 MIT / Apache 2.0）\n• FFmpeg — LGPL v2.1（以静态方式编译为独立 .so，未启用 GPL 组件；源码与构建脚本见仓库 third_party 说明）\n\nFFmpeg: https://ffmpeg.org\n构建配置: tools/build_ffmpeg_ext.sh</string>
 
     <string name="notification_channel_name">投屏服务</string>
     <string name="notification_waiting">等待投屏…</string>

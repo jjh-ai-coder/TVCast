@@ -79,6 +79,13 @@ com.tvcast/
 
 - **Android 10+ 后台启动 Activity 受限**：服务中收到投屏会尝试唤起播放页，个别 ROM 会拦截（此时手动打开 App 即可，播放不中断）
 - **厂商 ROM 后台管控**：FGS 合规只是及格线，待机页已提示用户把应用加入白名单
-- **TV banner 为矢量占位**：上架前建议替换为 320×180 PNG（`res/drawable/tv_banner.xml`）
-- **老盒子冷门格式**：ProtocolInfo 宽泛声明，硬解不支持时显示错误提示，V2 计划接入 Media3 ffmpeg 扩展
 - 部分盒子限制组播：已持 MulticastLock；若仍搜不到，检查路由器 AP 隔离/组播设置
+
+## ffmpeg 软解兜底（v1.2.0 起）
+
+硬解不支持时自动回退到 FFmpeg 软解（v6.1.1，LGPL v2.1）：HEVC、AC3/EAC3、DTS、TrueHD、MPEG-1/2、VP8/VP9、Opus、FLAC。h264/mp3/vorbis 等全硬解覆盖的格式不编入以控制体积（AAR 约 6.6MB，4 ABI）。
+
+- 集成方式：`DefaultRenderersFactory` + `EXTENSION_RENDERER_MODE_ON` + `setEnableDecoderFallback(true)`，硬解优先、软解兜底
+- 重新构建 AAR：`./tools/build_ffmpeg_ext.sh`（需 MSYS2 make + NDK r26+；产物入 `app/libs/`）
+- 开源声明：设置页「开源声明」；LGPL 合规说明（静态编译为独立 .so、未启用 GPL 组件、源码与构建脚本披露）见声明弹窗
+- 模拟器实测：HEVC MP4 与 MPEG-2+AC3 TS 均软解正常播放，`DefaultRenderersFactory: Loaded FfmpegVideoRenderer/FfmpegAudioRenderer` 日志确认
