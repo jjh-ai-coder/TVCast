@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background"
+    android:orientation="vertical"
+    android:padding="64dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/settings_title"
+        android:textColor="@color/textPrimary"
+        android:textSize="36sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="40dp"
+        android:text="@string/settings_device_name"
+        android:textColor="@color/textDim"
+        android:textSize="20sp" />
+
+    <EditText
+        android:id="@+id/device_name_edit"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:inputType="text"
+        android:maxLines="1"
+        android:textColor="@color/textPrimary"
+        android:textSize="24sp" />
+
+    <Switch
+        android:id="@+id/auto_start_switch"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:text="@string/settings_auto_start"
+        android:textColor="@color/textPrimary"
+        android:textSize="24sp" />
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="48dp"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/btn_save"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="?android:attr/selectableItemBackground"
+            android:paddingStart="32dp"
+            android:paddingEnd="32dp"
+            android:text="@string/settings_save"
+            android:textColor="@color/accent"
+            android:textSize="22sp" />
+
+        <Button
+            android:id="@+id/btn_back"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="32dp"
+            android:background="?android:attr/selectableItemBackground"
+            android:paddingStart="32dp"
+            android:paddingEnd="32dp"
+            android:text="@string/settings_back"
+            android:textColor="@color/textPrimary"
+            android:textSize="22sp" />
+    </LinearLayout>
+</LinearLayout>

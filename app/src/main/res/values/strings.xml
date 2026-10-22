@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">TVCast 投屏</string>
+
+    <string name="standby_waiting">等待手机投屏…</string>
+    <string name="standby_network_ok">网络已连接：%1$s</string>
+    <string name="standby_network_off">网络未连接，请检查网线或 WiFi</string>
+    <string name="standby_hint">手机与电视连接同一局域网，在视频/相册 App 中选择“投屏”或“DLNA”，\n选择本设备即可播放。若一直搜不到，请在系统设置中允许本应用后台运行与自启动。</string>
+    <string name="standby_settings">设 置</string>
+
+    <string name="playing_image">投屏图片</string>
+    <string name="playing_error_title">无法播放该内容</string>
+
+    <string name="settings_title">设置</string>
+    <string name="settings_device_name">设备名称（手机端可见）</string>
+    <string name="settings_auto_start">开机自动启动</string>
+    <string name="settings_save">保存</string>
+    <string name="settings_back">返回</string>
+    <string name="settings_saved">已保存</string>
+
+    <string name="notification_channel_name">投屏服务</string>
+    <string name="notification_waiting">等待投屏…</string>
+    <string name="notification_connected">已连接</string>
+    <string name="notification_playing">正在播放：%1$s</string>
+</resources>
