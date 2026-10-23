@@ -20,8 +20,8 @@ android {
         applicationId = "com.tvcast"
         minSdk = 21
         targetSdk = 34
-        versionCode = 6
-        versionName = "2.0.2"
+        versionCode = 7
+        versionName = "2.1.0-mirror.beta1"
     }
 
     signingConfigs {
