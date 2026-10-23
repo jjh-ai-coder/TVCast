@@ -97,7 +97,9 @@ class MirrorService : Service() {
           stopSelf()
           return START_NOT_STICKY
         }
+        lastError = null // 新尝试清掉旧错误
         startInForeground()
+        stopMirror() // 防御：上会话未完全停止时先彻底回收（projection/display/encoder）
         startMirror(host, port, resultCode, data)
       }
     }
@@ -132,6 +134,14 @@ class MirrorService : Service() {
     } else {
       startForeground(NOTIF_ID, notification)
     }
+  }
+
+  private fun friendlyError(e: Exception): String = when {
+    e is SecurityException && e.message?.contains("resultData") == true ->
+      "屏幕录制授权已失效（系统限制一次授权只允许一路采集），请重新点击\"开始镜像\""
+    e is SecurityException ->
+      "屏幕录制被系统拒绝，请重新授权"
+    else -> e.message ?: e.javaClass.simpleName
   }
 
   private fun startMirror(host: String, port: Int, resultCode: Int, data: Intent) {
@@ -215,31 +225,38 @@ class MirrorService : Service() {
       enc.start()
       val display = virtualDisplay
       if (display != null) {
-        // 旋转/分辨率变化：复用 display，切 Surface + 改尺寸
-        display.setSurface(enc.inputSurface)
+        // 旋转/分辨率变化：复用 display，先 resize 再切 Surface（resize 失败时旧链路原样保留）
         display.resize(w, h, metrics.densityDpi)
+        display.setSurface(enc.inputSurface)
+        encoder = enc
+        session?.updateVideoInfo(w, h, 30)
+        Log.i(TAG, "display reused at ${w}x$h")
+        // 旧编码器后台释放（release 内 join 排空线程最长 1s，主线程做会卡旋转）
+        if (oldEncoder != null) {
+          Thread({ oldEncoder.release() }, "tvcast-enc-release").apply {
+            isDaemon = true
+            start()
+          }
+        }
       } else {
         virtualDisplay = projection.createVirtualDisplay(
           "TVCastMirror", w, h, metrics.densityDpi,
           DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
           enc.inputSurface, null, mainHandler,
         ) ?: throw IllegalStateException("createVirtualDisplay returned null")
+        encoder = enc
+        session?.updateVideoInfo(w, h, 30)
       }
-      encoder = enc
-      session?.updateVideoInfo(w, h, 30)
     } catch (e: Exception) {
       Log.e(TAG, "open display/encoder failed at ${w}x$h", e)
-      lastError = e.message ?: e.javaClass.simpleName
       enc.release()
-      mainHandler.post { stopMirror(); stopSelf() }
-      return
-    } finally {
-      // 旧编码器后台释放（release 内 join 排空线程最长 1s，主线程做会卡旋转）
-      if (oldEncoder != null) {
-        Thread({ oldEncoder.release() }, "tvcast-enc-release").apply {
-          isDaemon = true
-          start()
-        }
+      if (virtualDisplay == null && oldEncoder == null) {
+        // 会话起步阶段失败：无链路可保留，干净停止并给出可读错误
+        lastError = friendlyError(e)
+        mainHandler.post { stopMirror(); stopSelf() }
+      } else {
+        // 旋转重建失败：保留旧编码器/display 继续推流（旧分辨率），等下次旋转事件重试
+        Log.w(TAG, "rebuild failed, keeping old encoder stream")
       }
     }
   }
@@ -275,8 +292,9 @@ class MirrorService : Service() {
 
   private val recreateRunnable = Runnable {
     if (!running) return@Runnable
-    Log.i(TAG, "rotation changed, rebuilding encoder/display")
-    closeDisplayAndEncoder()
+    Log.i(TAG, "rotation changed, rebuilding encoder")
+    // 不释放 VirtualDisplay（Android 14+/厂商 ROM 一次授权只允许建一个）：
+    // openDisplayAndEncoder 内部对已存在的 display 走 setSurface+resize 复用
     openDisplayAndEncoder()
   }
 
