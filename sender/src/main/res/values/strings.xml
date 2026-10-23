@@ -27,4 +27,18 @@
     <string name="action_failed">操作失败（%1$d：%2$s）</string>
     <string name="action_failed_short">操作失败（%1$s）</string>
     <string name="disconnect">断开连接</string>
+
+    <string name="screen_mirror">屏幕镜像</string>
+    <string name="mirror_title">屏幕镜像</string>
+    <string name="mirror_target_hint">电视端地址（IP 或 IP:端口，默认端口 9420；电视需为支持镜像的 TVCast 版本）</string>
+    <string name="mirror_start">开始镜像</string>
+    <string name="mirror_stop">停止镜像</string>
+    <string name="mirror_starting">已授权，正在启动镜像…</string>
+    <string name="mirror_idle">未在镜像</string>
+    <string name="mirror_denied">未授予屏幕录制权限，无法镜像</string>
+    <string name="mirror_bad_target">请输入有效的电视 IP 地址</string>
+    <string name="mirror_stats">镜像中 %1$d×%2$d · %3$d fps · %4$d Mbps · 已发送 %5$d 帧</string>
+    <string name="mirror_error">镜像出错：%1$s</string>
+    <string name="mirror_notif_channel">屏幕镜像</string>
+    <string name="mirror_notif_title">正在镜像手机屏幕到电视</string>
 </resources>

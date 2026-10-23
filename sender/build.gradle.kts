@@ -56,6 +56,7 @@ android {
 
 dependencies {
     implementation(project(":dlna"))
+    implementation(project(":transport"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)

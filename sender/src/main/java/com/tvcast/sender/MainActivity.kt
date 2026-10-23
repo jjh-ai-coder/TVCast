@@ -47,6 +47,9 @@ class MainActivity : AppCompatActivity() {
       devices.getOrNull(position)?.let { connectAndEnter(it) }
     }
     findViewById<Button>(R.id.btn_refresh).setOnClickListener { startDiscovery() }
+    findViewById<Button>(R.id.btn_mirror).setOnClickListener {
+      startActivity(Intent(this, MirrorActivity::class.java))
+    }
     findViewById<Button>(R.id.btn_connect_ip).setOnClickListener {
       val text = findViewById<EditText>(R.id.manual_ip).text?.toString()?.trim().orEmpty()
       connectByAddress(text)
