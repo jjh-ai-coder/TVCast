@@ -183,12 +183,18 @@ class MirrorService : Service() {
     return metrics
   }
 
+  /**
+   * 开显示与编码器。VirtualDisplay 全生命周期只创建一次（Android 14+/多数厂商 ROM
+   * 一次授权只允许建一个，二次 createVirtualDisplay 直接抛异常——旋转重建必须复用，
+   * 用 resize + setSurface 切到新编码器 Surface）。
+   */
   private fun openDisplayAndEncoder() {
     val projection = this.projection ?: return
     val metrics = realMetrics()
     val (w, h) = encodeSize(metrics.widthPixels, metrics.heightPixels)
     encodeWidth = w
     encodeHeight = h
+    val oldEncoder = encoder
     val enc = MirrorEncoder(
       width = w,
       height = h,
@@ -205,14 +211,37 @@ class MirrorService : Service() {
         mainHandler.post { stopMirror(); stopSelf() }
       },
     )
-    encoder = enc
-    enc.start()
-    session?.updateVideoInfo(w, h, 30)
-    virtualDisplay = projection.createVirtualDisplay(
-      "TVCastMirror", w, h, metrics.densityDpi,
-      DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
-      enc.inputSurface, null, mainHandler,
-    )
+    try {
+      enc.start()
+      val display = virtualDisplay
+      if (display != null) {
+        // 旋转/分辨率变化：复用 display，切 Surface + 改尺寸
+        display.setSurface(enc.inputSurface)
+        display.resize(w, h, metrics.densityDpi)
+      } else {
+        virtualDisplay = projection.createVirtualDisplay(
+          "TVCastMirror", w, h, metrics.densityDpi,
+          DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
+          enc.inputSurface, null, mainHandler,
+        ) ?: throw IllegalStateException("createVirtualDisplay returned null")
+      }
+      encoder = enc
+      session?.updateVideoInfo(w, h, 30)
+    } catch (e: Exception) {
+      Log.e(TAG, "open display/encoder failed at ${w}x$h", e)
+      lastError = e.message ?: e.javaClass.simpleName
+      enc.release()
+      mainHandler.post { stopMirror(); stopSelf() }
+      return
+    } finally {
+      // 旧编码器后台释放（release 内 join 排空线程最长 1s，主线程做会卡旋转）
+      if (oldEncoder != null) {
+        Thread({ oldEncoder.release() }, "tvcast-enc-release").apply {
+          isDaemon = true
+          start()
+        }
+      }
+    }
   }
 
   private fun closeDisplayAndEncoder() {
