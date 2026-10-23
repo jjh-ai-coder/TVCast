@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">TVCast 投屏遥控</string>
+
+    <string name="searching">正在搜索局域网内的投屏设备…</string>
+    <string name="no_device">未发现设备：请确认电视已打开 TVCast 且与手机同一网络；\n或使用下方“手动直连”输入电视上显示的 IP:端口</string>
+    <string name="found_n">发现 %1$d 台设备，点击连接</string>
+    <string name="connecting">正在连接…</string>
+    <string name="connect_failed">连接失败：请检查地址（电视待机页显示 http://IP:端口）</string>
+    <string name="manual_hint">手动直连（电视待机页显示的 IP:端口）</string>
+    <string name="connect">连接</string>
+    <string name="refresh">重新搜索</string>
+
+    <string name="casting_to">正在控制：%1$s</string>
+    <string name="pick_local">选择本地媒体</string>
+    <string name="push_url_hint">输入网络媒体 URL 推送到电视</string>
+    <string name="push">推送</string>
+    <string name="now_casting">正在投：%1$s</string>
+    <string name="pushing">推送中…</string>
+    <string name="state_playing">播放中</string>
+    <string name="state_paused">已暂停</string>
+    <string name="state_stopped">已停止</string>
+    <string name="state_buffering">缓冲中…</string>
+    <string name="state_no_media">未在播放</string>
+    <string name="device_offline">设备离线或断开</string>
+    <string name="local_server_failed">本地媒体服务启动失败</string>
+    <string name="action_failed">操作失败（%1$d：%2$s）</string>
+    <string name="action_failed_short">操作失败（%1$s）</string>
+    <string name="disconnect">断开连接</string>
+</resources>

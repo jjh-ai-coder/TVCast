@@ -24,3 +24,4 @@ rootProject.name = "TVCast"
 
 include(":dlna")
 include(":app")
+include(":sender")
