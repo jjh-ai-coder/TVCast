@@ -6,6 +6,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
@@ -111,6 +112,15 @@ class RemoteActivity : AppCompatActivity() {
     })
   }
 
+  override fun onNewIntent(intent: Intent) {
+    super.onNewIntent(intent)
+    // 防御：shell/其他路径把调试意图投递到栈顶的 Remote 时也能生效
+    intent.getStringExtra(EXTRA_DEBUG_PUSH)?.let { raw ->
+      debugPushDone = false
+      pushLocal(Uri.parse(raw))
+    }
+  }
+
   override fun onResume() {
     super.onResume()
     CastSession.addStateListener(genaListener)
@@ -185,23 +195,18 @@ class RemoteActivity : AppCompatActivity() {
     val title = displayName ?: "本地媒体"
     // SAF 授权的 URI 直接给 mime；拿不到（如 MediaStore 无权限）就按文件名扩展名推断
     val mime = contentResolver.getType(uri) ?: displayName?.let { mimeFromName(it) } ?: ""
+    Log.d(TAG, "pushLocal uri=$uri mime=$mime title=$title")
     // 持久化读权限（本次会话内重复拉流需要）
     try {
       contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
     } catch (_: Exception) {
     }
-    val port = ContentServer.start(this, uri)
-    if (port <= 0) {
+    // 每次推送生成带唯一序号的流地址（图片切图不能复用同一 URL）
+    val url = ContentServer.buildStreamUrl(this, uri, mime.ifEmpty { null }, extForMime(mime))
+    if (url == null) {
       Toast.makeText(this, R.string.local_server_failed, Toast.LENGTH_SHORT).show()
       return
     }
-    val base = ContentServer.currentUrl()
-    if (base == null) {
-      Toast.makeText(this, R.string.local_server_failed, Toast.LENGTH_SHORT).show()
-      return
-    }
-    // URL 带上扩展名：接收端类型推断兜底需要（upnp:class 已同步携带）
-    val url = base + (extForMime(mime)?.let { ".$it" } ?: "")
     pushUrl(url, title, SoapControlPoint.upnpClassForMime(mime))
   }
 
@@ -233,6 +238,7 @@ class RemoteActivity : AppCompatActivity() {
     currentTitle = title
     titleText.text = getString(R.string.now_casting, title)
     stateText.text = getString(R.string.pushing)
+    Log.d(TAG, "pushUrl url=$url class=$upnpClass")
     thread {
       val result = CastSession.soap.setAvTransportUri(device, url, title, upnpClass)
       main.post {
@@ -298,6 +304,8 @@ class RemoteActivity : AppCompatActivity() {
   private companion object {
     const val REQ_PICK = 41
     const val POLL_MS = 1000L
+    const val EXTRA_DEBUG_PUSH = "debug_push_uri"
+    private const val TAG = "TVCast/Sender"
   }
 
   private var debugPushDone = false

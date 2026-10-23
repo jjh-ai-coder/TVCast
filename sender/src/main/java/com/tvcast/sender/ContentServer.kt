@@ -6,6 +6,7 @@ import android.provider.OpenableColumns
 import com.tvcast.dlna.http.HttpRequest
 import com.tvcast.dlna.http.HttpResponse
 import com.tvcast.dlna.http.MiniHttpServer
+import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 
 /**
@@ -18,22 +19,33 @@ object ContentServer {
 
   private var server: MiniHttpServer? = null
   private val item = AtomicReference<Item?>(null)
+  private val pushSeq = AtomicLong(0)
 
-  /** 启动（或替换内容）并返回端口 */
+  /** 启动（或替换内容）；随后用 [buildStreamUrl] 取带唯一标识的推送地址 */
   @Synchronized
-  fun start(context: Context, uri: Uri): Int {
+  fun start(context: Context, uri: Uri, mimeType: String?): Boolean {
     val appContext = context.applicationContext
-    val mimeType = appContext.contentResolver.getType(uri) ?: "application/octet-stream"
-    val size = querySize(appContext, uri)
-    item.set(Item(appContext, uri, mimeType, size))
+    item.set(Item(appContext, uri, mimeType ?: "application/octet-stream", querySize(appContext, uri)))
     val existing = server
-    if (existing != null && existing.isRunning) return existing.port
+    if (existing != null && existing.isRunning) return true
     val newServer = MiniHttpServer(object : com.tvcast.dlna.http.HttpHandler {
       override fun handle(request: HttpRequest): HttpResponse = serve(request)
     })
     newServer.start(preferredPort = 0)
     server = newServer
-    return newServer.port
+    return true
+  }
+
+  /**
+   * 构建本次推送的流地址。路径带自增序号：同一内容重复推送也生成不同 URL，
+   * 避免接收端/缓存把两次推送当成同一资源（图片切图的经典坑）。
+   */
+  @Synchronized
+  fun buildStreamUrl(context: Context, uri: Uri, mimeType: String?, ext: String?): String? {
+    if (!start(context, uri, mimeType)) return null
+    val s = server ?: return null
+    val ip = com.tvcast.dlna.NetInfo.pickLocalIp() ?: return null
+    return "http://$ip:${s.port}/content-${pushSeq.incrementAndGet()}" + (ext?.let { ".$it" } ?: "")
   }
 
   @Synchronized
@@ -41,13 +53,6 @@ object ContentServer {
     server?.stop()
     server = null
     item.set(null)
-  }
-
-  fun currentUrl(): String? {
-    val s = server ?: return null
-    if (!s.isRunning) return null
-    val ip = com.tvcast.dlna.NetInfo.pickLocalIp() ?: return null
-    return "http://$ip:${s.port}/content"
   }
 
   private fun serve(request: HttpRequest): HttpResponse {

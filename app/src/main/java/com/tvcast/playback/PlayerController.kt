@@ -115,6 +115,8 @@ class PlayerController(context: Context) : RendererPlayer {
       player.clearMediaItems()
       if (mediaKind == MediaKind.IMAGE) {
         setState(TransportState.PLAYING)
+        // 图片→图片切换时状态不变，setState 不会触发监听；必须强制通知 UI 刷新
+        for (l in listeners) l.run()
         return@post
       }
       setState(TransportState.TRANSITIONING)

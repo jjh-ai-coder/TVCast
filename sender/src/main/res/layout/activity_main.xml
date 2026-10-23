@@ -21,6 +21,14 @@
         android:textColor="@color/textDim"
         android:textSize="14sp" />
 
+    <TextView
+        android:id="@+id/version_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:textColor="@color/textDim"
+        android:textSize="11sp" />
+
     <ProgressBar
         android:id="@+id/progress"
         android:layout_width="wrap_content"

@@ -38,6 +38,8 @@ class MainActivity : AppCompatActivity() {
     intent?.getStringExtra(EXTRA_DEBUG_PUSH)?.let { debugPushUri = Uri.parse(it) }
     status = findViewById(R.id.status)
     progress = findViewById(R.id.progress)
+    findViewById<TextView>(R.id.version_text).text = "v" + packageManager
+      .getPackageInfo(packageName, 0).versionName
     listView = findViewById(R.id.device_list)
     adapter = ArrayAdapter(this, R.layout.item_device, devices.map { it.friendlyName })
     listView.adapter = adapter
@@ -49,6 +51,8 @@ class MainActivity : AppCompatActivity() {
       val text = findViewById<EditText>(R.id.manual_ip).text?.toString()?.trim().orEmpty()
       connectByAddress(text)
     }
+    // 调试/自动化：已连接时跳过发现直接进遥控页推送
+    forwardIfConnected()
   }
 
   override fun onResume() {
@@ -60,8 +64,17 @@ class MainActivity : AppCompatActivity() {
     super.onNewIntent(intent)
     intent.getStringExtra(EXTRA_DEBUG_PUSH)?.let {
       debugPushUri = Uri.parse(it)
-      startDiscovery()
+      if (!forwardIfConnected()) startDiscovery()
     }
+  }
+
+  /** 已连接且带调试推送意图 → 直接进遥控页；@return 是否已转发 */
+  private fun forwardIfConnected(): Boolean {
+    if (debugPushUri != null && CastSession.connected) {
+      startActivity(Intent(this, RemoteActivity::class.java))
+      return true
+    }
+    return false
   }
 
   private fun startDiscovery() {
