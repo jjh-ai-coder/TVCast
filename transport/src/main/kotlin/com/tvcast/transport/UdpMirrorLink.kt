@@ -12,12 +12,13 @@ import java.net.SocketAddress
  * 避免大关键帧的百包突发打爆对端/中间设备的 UDP 缓冲。
  */
 class UdpMirrorLink(
-  private val socket: DatagramSocket,
+  val socket: DatagramSocket,
   private var remote: SocketAddress?,
   val deframer: FrameDeframer,
   val sendRing: SendRing = SendRing(),
   private val onNack: (Int) -> Unit = {},
   private val onBye: () -> Unit = {},
+  private val onInfo: (MirrorInfo) -> Unit = {},
   private val lossSimulator: ((ByteArray) -> Boolean)? = null,
   private val pacingBatchSize: Int = 8,
   private val pacingPauseMs: Long = 1,
@@ -30,6 +31,7 @@ class UdpMirrorLink(
     deframer: FrameDeframer,
     onNack: (Int) -> Unit = {},
     onBye: () -> Unit = {},
+    onInfo: (MirrorInfo) -> Unit = {},
     lossSimulator: ((ByteArray) -> Boolean)? = null,
     log: (String) -> Unit = {},
   ) : this(
@@ -39,7 +41,7 @@ class UdpMirrorLink(
       receiveBufferSize = 1 shl 20
       sendBufferSize = 1 shl 20
     },
-    remote, deframer, SendRing(), onNack, onBye, lossSimulator, 8, 1, log,
+    remote, deframer, SendRing(), onNack, onBye, onInfo, lossSimulator, 8, 1, log,
   )
 
   val localPort: Int get() = socket.localPort
@@ -78,14 +80,28 @@ class UdpMirrorLink(
     return sent
   }
 
+  /** 发送会话信息（周期广播：丢失无碍，下一轮即到） */
+  fun sendInfo(info: MirrorInfo) {
+    val address = remoteAddress ?: return
+    val datagram = WireFormat.encodeInfo(info)
+    if (lossSimulator?.invoke(datagram) != true) {
+      try {
+        socket.send(DatagramPacket(datagram, datagram.size, address))
+      } catch (_: Exception) {
+      }
+    }
+  }
+
   fun sendBye() {
     val address = remoteAddress ?: return
     val bye = WireFormat.encodeBye()
-    // 4 字节单发易丢，连发 3 次提高送达率；接收端仍需以"超时无数据"兜底判定会话结束
+    // 4 字节单发易丢，连发 3 次提高送达率；接收端仍需以"超时无数据"兜底判定会话结束。
+    // 注意：必须在后台线程调用（主线程 socket.send 抛 NetworkOnMainThreadException 会被吞）
     repeat(3) {
       try {
         socket.send(DatagramPacket(bye, bye.size, address))
-      } catch (_: Exception) {
+      } catch (e: Exception) {
+        log("sendBye failed: $e")
       }
       if (it < 2) try { Thread.sleep(2) } catch (_: InterruptedException) { Thread.currentThread().interrupt() }
     }
@@ -112,6 +128,11 @@ class UdpMirrorLink(
   fun handleRaw(data: ByteArray, length: Int) {
     if (WireFormat.isBye(data, length)) {
       onBye()
+      return
+    }
+    val info = WireFormat.decodeInfo(data, length)
+    if (info != null) {
+      onInfo(info)
       return
     }
     val nacks = WireFormat.decodeNack(data, length)

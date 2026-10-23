@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/black">
+
+    <SurfaceView
+        android:id="@+id/mirror_surface"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_gravity="center" />
+
+    <TextView
+        android:id="@+id/mirror_stats"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|start"
+        android:layout_margin="24dp"
+        android:shadowColor="@android:color/black"
+        android:shadowRadius="4"
+        android:textColor="@color/textDim"
+        android:textSize="16sp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="24dp"
+        android:shadowColor="@android:color/black"
+        android:shadowRadius="4"
+        android:text="@string/mirror_exit_hint"
+        android:textColor="@color/textDim"
+        android:textSize="16sp" />
+</FrameLayout>

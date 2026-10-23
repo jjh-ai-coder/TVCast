@@ -58,6 +58,8 @@ class MirrorService : Service() {
   }
 
   private val mainHandler = Handler(Looper.getMainLooper())
+  /** 会话标识：接收端据此区分"继续投屏"与"新会话重启" */
+  private val sessionId = java.util.Random().nextInt()
   private var projection: MediaProjection? = null
   private var virtualDisplay: VirtualDisplay? = null
   private var encoder: MirrorEncoder? = null
@@ -145,6 +147,7 @@ class MirrorService : Service() {
       }
       val s = MirrorSession(
         remote = InetSocketAddress(host, port),
+        sessionId = sessionId,
         onBitrateMbps = { mbps ->
           bitrateMbps = mbps
           encoder?.setBitrate(mbps * 1_000_000)
@@ -154,7 +157,7 @@ class MirrorService : Service() {
           Log.d(TAG, "stats fps=$fps bitrate=${bitrateMbps}Mbps frames=$sentFrames nacks=$nacks")
         },
         onBye = {
-          Log.i(TAG, "receiver sent BYE")
+          Log.i(TAG, "receiver sent BYE (addr=${session?.link?.remoteAddress()})")
           mainHandler.post { stopMirror(); stopSelf() }
         },
       )
@@ -204,6 +207,7 @@ class MirrorService : Service() {
     )
     encoder = enc
     enc.start()
+    session?.updateVideoInfo(w, h, 30)
     virtualDisplay = projection.createVirtualDisplay(
       "TVCastMirror", w, h, metrics.densityDpi,
       DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,

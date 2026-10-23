@@ -31,6 +31,8 @@ class CastService : Service() {
   private val settings by lazy { Settings(this) }
   lateinit var playerController: PlayerController
     private set
+  lateinit var mirrorReceiver: MirrorReceiver
+    private set
   private lateinit var volumeControl: SystemVolumeControl
   private lateinit var stack: DmrStack
   private lateinit var watchdog: NetworkWatchdog
@@ -72,6 +74,22 @@ class CastService : Service() {
     }
     watchdog = NetworkWatchdog(this) { ip -> stack.onIpChanged(ip) }
     watchdog.start()
+    // 屏幕镜像接收：常驻监听 UDP 9420，会话开始即唤起 UI
+    mirrorReceiver = MirrorReceiver(this) {
+      notifyUi()
+      if (mirrorReceiver.active) launchUi()
+    }
+    mirrorReceiver.start()
+  }
+
+  private fun launchUi() {
+    val intent = Intent(this, MainActivity::class.java)
+      .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+    try {
+      startActivity(intent)
+    } catch (e: Exception) {
+      Log.w(TAG, "launch MainActivity blocked: ${e.message}")
+    }
   }
 
   override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int = START_STICKY
@@ -80,6 +98,10 @@ class CastService : Service() {
 
   override fun onDestroy() {
     playerController.removeListener(rendererListener)
+    try {
+      mirrorReceiver.release()
+    } catch (_: Exception) {
+    }
     try {
       watchdog.stop()
     } catch (_: Exception) {

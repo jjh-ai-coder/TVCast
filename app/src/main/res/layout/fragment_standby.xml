@@ -34,6 +34,15 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:gravity="center"
+        android:text="@string/standby_mirror_ready"
+        android:textColor="@color/textDim"
+        android:textSize="16sp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_marginTop="40dp"
         android:gravity="center"
         android:text="@string/standby_hint"

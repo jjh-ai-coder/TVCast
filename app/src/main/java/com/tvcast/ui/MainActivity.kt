@@ -62,10 +62,11 @@ class MainActivity : AppCompatActivity() {
   @Suppress("MissingSuperCall")
   @Deprecated("Deprecated in Java")
   override fun onBackPressed() {
-    if (settingsMode) {
-      closeSettings()
-    } else {
-      moveTaskToBack(true)
+    val mirror = castService?.mirrorReceiver
+    when {
+      mirror?.active == true -> mirror.stopByUser() // 返回键 = 退出镜像（反发 BYE，手机停止采集）
+      settingsMode -> closeSettings()
+      else -> moveTaskToBack(true)
     }
   }
 
@@ -84,12 +85,18 @@ class MainActivity : AppCompatActivity() {
   private fun refreshUi() {
     if (settingsMode) return
     if (supportFragmentManager.isStateSaved) return
-    val player = castService?.playerController
+    val service = castService
+    val player = service?.playerController
     val showPlaying = player?.let {
       it.uri != null && (it.state != TransportState.STOPPED || it.lastError != null)
     } ?: false
     val current = supportFragmentManager.findFragmentById(com.tvcast.R.id.container)
-    val targetClass = if (showPlaying) PlayingFragment::class.java else StandbyFragment::class.java
+    // 镜像会话优先于 DLNA 播放页
+    val targetClass = when {
+      service?.mirrorReceiver?.active == true -> MirrorFragment::class.java
+      showPlaying -> PlayingFragment::class.java
+      else -> StandbyFragment::class.java
+    }
     if (current == null || current.javaClass != targetClass) {
       supportFragmentManager.beginTransaction()
         .replace(com.tvcast.R.id.container, targetClass.getDeclaredConstructor().newInstance())
@@ -98,6 +105,7 @@ class MainActivity : AppCompatActivity() {
       // Service 晚于 Fragment 就绪时，主动让当前页刷新（否则待机页会一直显示"网络未连接"）
       (current as? StandbyFragment)?.refresh()
       (current as? PlayingFragment)?.refresh()
+      (current as? MirrorFragment)?.refresh()
     }
   }
 }

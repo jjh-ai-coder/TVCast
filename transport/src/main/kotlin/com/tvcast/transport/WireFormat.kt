@@ -26,6 +26,14 @@ class CompletedFrame(
   val packetCount: Int,
 )
 
+/** 镜像会话信息（INFO 包携带；sessionId 变化 = 发送端新会话，接收端需整体重置） */
+data class MirrorInfo(
+  val sessionId: Int,
+  val width: Int,
+  val height: Int,
+  val fps: Int,
+)
+
 /**
  * 数据包线格式（大端）：
  * ```
@@ -37,8 +45,10 @@ object WireFormat {
   const val MAGIC_DATA = 0x54564353 // "TVCS"
   const val MAGIC_NACK = 0x54564E41 // "TVNA"
   const val MAGIC_BYE = 0x54564259 // "TVBY"
+  const val MAGIC_INFO = 0x5456494E // "TVIN"
   const val VERSION = 1
   const val HEADER_SIZE = 26
+  const val INFO_SIZE = 14
   const val MAX_PAYLOAD = 1200
   const val MAX_DATAGRAM = HEADER_SIZE + MAX_PAYLOAD
 
@@ -139,6 +149,31 @@ object WireFormat {
 
   fun isBye(data: ByteArray, length: Int): Boolean =
     length == 4 && ByteBuffer.wrap(data).int == MAGIC_BYE
+
+  /** INFO 包：magic(4) ver(1) sessionId(4) width(2) height(2) fps(1)，共 14 字节 */
+  fun encodeInfo(info: MirrorInfo): ByteArray {
+    val buf = ByteBuffer.allocate(INFO_SIZE)
+    buf.putInt(MAGIC_INFO)
+    buf.put(VERSION.toByte())
+    buf.putInt(info.sessionId)
+    buf.putShort(info.width.toShort())
+    buf.putShort(info.height.toShort())
+    buf.put(info.fps.coerceIn(0, 255).toByte())
+    return buf.array()
+  }
+
+  fun decodeInfo(data: ByteArray, length: Int): MirrorInfo? {
+    if (length != INFO_SIZE) return null
+    val buf = ByteBuffer.wrap(data, 0, length)
+    if (buf.int != MAGIC_INFO) return null
+    if (buf.get().toInt() != VERSION) return null
+    val sessionId = buf.int
+    val width = buf.short.toInt() and 0xFFFF
+    val height = buf.short.toInt() and 0xFFFF
+    val fps = buf.get().toInt() and 0xFF
+    if (width == 0 || height == 0) return null
+    return MirrorInfo(sessionId, width, height, fps)
+  }
 
   const val NACK_MAX_ENTRIES = 64
 }

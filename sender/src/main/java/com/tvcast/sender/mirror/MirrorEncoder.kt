@@ -29,12 +29,16 @@ class MirrorEncoder(
     private const val MIME = MediaFormat.MIMETYPE_VIDEO_AVC
     private const val FRAME_RATE = 30
     private const val I_FRAME_INTERVAL_SEC = 2
+    /** 静态画面下出帧稀疏（AUTO_MIRROR 只在内容变化时出帧），I 帧间隔按帧数算会拉长到分钟级；
+     *  按墙钟补请求关键帧，保证接收端 ≤2s+ε 可加入 */
+    private const val KEYFRAME_MAX_GAP_MS = 2000L
   }
 
   private val codec: MediaCodec = MediaCodec.createEncoderByType(MIME)
   @Volatile private var released = false
   private var csd = ByteArray(0)
   private var drainThread: Thread? = null
+  @Volatile private var lastKeyframeAt = 0L
 
   /** 供 VirtualDisplay 渲染的输入 Surface（configure 后创建，编码器 release 时一并释放） */
   val inputSurface: Surface
@@ -79,7 +83,13 @@ class MirrorEncoder(
             buffer.get(chunk)
             val config = info.flags and MediaCodec.BUFFER_FLAG_CODEC_CONFIG != 0
             @Suppress("DEPRECATION")
-            val keyframe = info.flags and MediaCodec.BUFFER_FLAG_SYNC_FRAME != 0
+            var keyframe = info.flags and MediaCodec.BUFFER_FLAG_SYNC_FRAME != 0
+            if (!config && !keyframe && lastKeyframeAt > 0 &&
+              SystemClock.elapsedRealtime() - lastKeyframeAt > KEYFRAME_MAX_GAP_MS
+            ) {
+              requestKeyframe() // 下一帧补一个关键帧（内容驱动稀疏出帧场景）
+            }
+            if (keyframe) lastKeyframeAt = SystemClock.elapsedRealtime()
             when {
               config -> csd = chunk
               keyframe -> onFrame(SystemClock.elapsedRealtime(), true, csd + chunk)

@@ -140,4 +140,13 @@ class FrameDeframer(
 
   /** 已交付/等待中的诊断信息 */
   fun pendingCount(): Int = assemblies.size + readyQueue.size
+
+  /** 会话重置：清空全部装配/就绪状态与交付游标（发送端重启时由接收端调用） */
+  fun reset() = synchronized(lock) {
+    assemblies.clear()
+    readyQueue.clear()
+    nextDeliverSeq = -1L
+    highestSeq = -1L
+    cursorMissingSince = 0
+  }
 }
