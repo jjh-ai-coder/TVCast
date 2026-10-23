@@ -58,9 +58,15 @@ class SoapControlPoint(private val log: (String) -> Unit = {}) {
     }
   }
 
-  fun setAvTransportUri(device: DlnaDevice, uri: String, title: String, metaData: String = ""): CpResult {
+  fun setAvTransportUri(
+    device: DlnaDevice,
+    uri: String,
+    title: String,
+    upnpClass: String = "object.item.videoItem",
+    metaData: String = "",
+  ): CpResult {
     val control = device.avTransportControlUrl ?: return CpResult.Error("no AVTransport controlURL")
-    val didl = didlLite(uri, title)
+    val didl = didlLite(uri, title, upnpClass)
     return invoke(
       control, AVT, "SetAVTransportURI",
       mapOf(
@@ -169,14 +175,24 @@ class SoapControlPoint(private val log: (String) -> Unit = {}) {
     const val AVT = "urn:schemas-upnp-org:service:AVTransport:1"
     const val RCS = "urn:schemas-upnp-org:service:RenderingControl:1"
 
-    fun didlLite(uri: String, title: String): String =
-      "<DIDL-Lite xmlns=\"urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/\" " +
-        "xmlns:dc=\"http://purl.org/dc/elements/1.1/\" " +
-        "xmlns:upnp=\"urn:schemas-upnp-org:metadata-1-0/upnp/\">" +
-        "<item id=\"tvcast-1\" restricted=\"0\">" +
-        "<dc:title>${Xml.escape(title)}</dc:title>" +
-        "<upnp:class>object.item.videoItem</upnp:class>" +
-        "<res>${Xml.escape(uri)}</res></item></DIDL-Lite>"
+  fun didlLite(uri: String, title: String, upnpClass: String = "object.item.videoItem"): String =
+    "<DIDL-Lite xmlns=\"urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/\" " +
+      "xmlns:dc=\"http://purl.org/dc/elements/1.1/\" " +
+      "xmlns:upnp=\"urn:schemas-upnp-org:metadata-1-0/upnp/\">" +
+      "<item id=\"tvcast-1\" restricted=\"0\">" +
+      "<dc:title>${Xml.escape(title)}</dc:title>" +
+      "<upnp:class>${Xml.escape(upnpClass)}</upnp:class>" +
+      "<res>${Xml.escape(uri)}</res></item></DIDL-Lite>"
+
+  /** 由 MIME 类型推导 upnp:class（接收端据此分流视频/音频/图片渲染路径） */
+  fun upnpClassForMime(mimeType: String?): String {
+    val main = mimeType?.substringBefore('/')?.lowercase()
+    return when (main) {
+      "audio" -> "object.item.audioItem"
+      "image" -> "object.item.imageItem"
+      else -> "object.item.videoItem"
+    }
+  }
 
     /** DIDL 作为 SOAP 参数值需要整体 XML 转义一层 */
     fun escapeDidl(didl: String): String = Xml.escape(didl)

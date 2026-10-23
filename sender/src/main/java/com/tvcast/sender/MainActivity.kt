@@ -39,7 +39,7 @@ class MainActivity : AppCompatActivity() {
     status = findViewById(R.id.status)
     progress = findViewById(R.id.progress)
     listView = findViewById(R.id.device_list)
-    adapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, devices.map { it.friendlyName })
+    adapter = ArrayAdapter(this, R.layout.item_device, devices.map { it.friendlyName })
     listView.adapter = adapter
     listView.setOnItemClickListener { _, _, position, _ ->
       devices.getOrNull(position)?.let { connectAndEnter(it) }

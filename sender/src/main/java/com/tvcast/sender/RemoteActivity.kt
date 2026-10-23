@@ -15,6 +15,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.tvcast.dlna.cp.CpResult
 import com.tvcast.dlna.cp.GenaState
+import com.tvcast.dlna.cp.SoapControlPoint
 import kotlin.concurrent.thread
 
 /** 遥控页：推送媒体（本地/URL）+ 传输控制（播放/暂停/停止/进度/音量） */
@@ -180,7 +181,10 @@ class RemoteActivity : AppCompatActivity() {
   }
 
   private fun pushLocal(uri: Uri) {
-    val title = queryDisplayName(uri) ?: "本地媒体"
+    val displayName = queryDisplayName(uri) ?: uri.lastPathSegment?.substringAfterLast('/')
+    val title = displayName ?: "本地媒体"
+    // SAF 授权的 URI 直接给 mime；拿不到（如 MediaStore 无权限）就按文件名扩展名推断
+    val mime = contentResolver.getType(uri) ?: displayName?.let { mimeFromName(it) } ?: ""
     // 持久化读权限（本次会话内重复拉流需要）
     try {
       contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
@@ -191,21 +195,46 @@ class RemoteActivity : AppCompatActivity() {
       Toast.makeText(this, R.string.local_server_failed, Toast.LENGTH_SHORT).show()
       return
     }
-    val url = ContentServer.currentUrl()
-    if (url == null) {
+    val base = ContentServer.currentUrl()
+    if (base == null) {
       Toast.makeText(this, R.string.local_server_failed, Toast.LENGTH_SHORT).show()
       return
     }
-    pushUrl(url, title)
+    // URL 带上扩展名：接收端类型推断兜底需要（upnp:class 已同步携带）
+    val url = base + (extForMime(mime)?.let { ".$it" } ?: "")
+    pushUrl(url, title, SoapControlPoint.upnpClassForMime(mime))
   }
 
-  private fun pushUrl(url: String, title: String) {
+  private fun extForMime(mime: String?): String? = when (mime?.lowercase()) {
+    "image/jpeg" -> "jpg"
+    "image/png" -> "png"
+    "image/gif" -> "gif"
+    "image/webp" -> "webp"
+    "image/bmp" -> "bmp"
+    "video/mp4" -> "mp4"
+    "video/x-matroska" -> "mkv"
+    "video/mpeg" -> "mpeg"
+    "video/quicktime" -> "mov"
+    "video/x-msvideo" -> "avi"
+    "video/x-flv" -> "flv"
+    "video/mp2t" -> "ts"
+    "video/webm" -> "webm"
+    "audio/mpeg" -> "mp3"
+    "audio/flac", "audio/x-flac" -> "flac"
+    "audio/wav", "audio/x-wav" -> "wav"
+    "audio/mp4" -> "m4a"
+    "audio/ogg" -> "ogg"
+    "audio/aac" -> "aac"
+    else -> null
+  }
+
+  private fun pushUrl(url: String, title: String, upnpClass: String = "object.item.videoItem") {
     val device = CastSession.device ?: return
     currentTitle = title
     titleText.text = getString(R.string.now_casting, title)
     stateText.text = getString(R.string.pushing)
     thread {
-      val result = CastSession.soap.setAvTransportUri(device, url, title)
+      val result = CastSession.soap.setAvTransportUri(device, url, title, upnpClass)
       main.post {
         showResult(result)
         if (result is CpResult.Ok) {
@@ -213,6 +242,33 @@ class RemoteActivity : AppCompatActivity() {
           stateText.text = getString(R.string.state_buffering)
         }
       }
+    }
+  }
+
+  private fun mimeFromName(name: String): String? {
+    val ext = name.substringAfterLast('.', "").lowercase()
+    if (ext.isEmpty() || ext.length > 5) return null
+    return when (ext) {
+      "jpg", "jpeg" -> "image/jpeg"
+      "png" -> "image/png"
+      "gif" -> "image/gif"
+      "webp" -> "image/webp"
+      "bmp" -> "image/bmp"
+      "mp4", "m4v" -> "video/mp4"
+      "mkv" -> "video/x-matroska"
+      "mpeg", "mpg" -> "video/mpeg"
+      "mov" -> "video/quicktime"
+      "avi" -> "video/x-msvideo"
+      "flv" -> "video/x-flv"
+      "ts", "m2ts" -> "video/mp2t"
+      "webm" -> "video/webm"
+      "mp3" -> "audio/mpeg"
+      "flac" -> "audio/flac"
+      "wav" -> "audio/wav"
+      "m4a" -> "audio/mp4"
+      "ogg" -> "audio/ogg"
+      "aac" -> "audio/aac"
+      else -> null
     }
   }
 

@@ -2,6 +2,7 @@ package com.tvcast.dlna.cp
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -114,6 +115,23 @@ class CpSideTest {
     val once = LastChangeParser.unescape(escaped)
     val twice = LastChangeParser.unescape(once)
     assertTrue(twice.contains("<dc:title>影片<一></dc:title>"))
+  }
+
+  @Test
+  fun didlLiteCarriesUpnpClass() {
+    val video = SoapControlPoint.didlLite("http://a/v.mp4", "v")
+    assertTrue(video.contains("<upnp:class>object.item.videoItem</upnp:class>"))
+    val image = SoapControlPoint.didlLite("http://a/p.jpg", "p", "object.item.imageItem")
+    assertTrue(image.contains("<upnp:class>object.item.imageItem</upnp:class>"))
+  }
+
+  @Test
+  fun upnpClassForMimeMapping() {
+    assertEquals("object.item.imageItem", SoapControlPoint.upnpClassForMime("image/jpeg"))
+    assertEquals("object.item.audioItem", SoapControlPoint.upnpClassForMime("audio/mpeg"))
+    assertEquals("object.item.videoItem", SoapControlPoint.upnpClassForMime("video/mp4"))
+    assertEquals("object.item.videoItem", SoapControlPoint.upnpClassForMime(null))
+    assertEquals("object.item.videoItem", SoapControlPoint.upnpClassForMime("weird/thing"))
   }
 
   @Test
