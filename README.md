@@ -1,8 +1,13 @@
-# TVCast — Android TV DLNA 投屏接收端
+# TVCast — Android TV DLNA 投屏接收端 + 手机投屏遥控
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE) [![Release](https://img.shields.io/github/v/release/jjh-ai-coder/TVCast)](https://github.com/jjh-ai-coder/TVCast/releases)
 
 [English](README.en.md)
+
+一套两个 App（v2.0.0 起共用 `:dlna` 协议栈模块）：
+
+1. **TVCast 投屏**（`:app`，电视端）——DLNA/UPnP MediaRenderer 接收端，手机端任意支持 DLNA 的 App（B站、爱奇艺、腾讯视频、相册、BubbleUPnP…）可投屏
+2. **TVCast 投屏遥控**（`:sender`，手机端）——自家的 DLNA 控制点：自动发现电视、本地媒体/网络 URL 推送、播放/暂停/停止/进度/音量遥控、GENA 事件实时状态
 
 Android TV/盒子上的 DLNA/UPnP MediaRenderer（DMR）接收端。手机端任意支持 DLNA 投屏的 App（BubbleUPnP、B站、爱奇艺、腾讯视频、系统相册等）在局域网内发现电视后，即可向大屏推送视频/音乐/图片。
 
@@ -89,3 +94,13 @@ com.tvcast/
 - 重新构建 AAR：`./tools/build_ffmpeg_ext.sh`（需 MSYS2 make + NDK r26+；产物入 `app/libs/`）
 - 开源声明：设置页「开源声明」；LGPL 合规说明（静态编译为独立 .so、未启用 GPL 组件、源码与构建脚本披露）见声明弹窗
 - 模拟器实测：HEVC MP4 与 MPEG-2+AC3 TS 均软解正常播放，`DefaultRenderersFactory: Loaded FfmpegVideoRenderer/FfmpegAudioRenderer` 日志确认
+
+## 手机端发送 App（:sender，v2.0.0 起）
+
+与接收端共用自研 `:dlna` 纯 JVM 协议栈，控制点（CP）侧新增：SSDP M-SEARCH 搜索、设备描述解析（相对/绝对 URL）、SOAP 客户端、GENA 订阅器（原生 Socket SUBSCRIBE + 内置 NOTIFY 接收服务）。
+
+- **发现**：SSDP 自动搜索 + 手动 IP 直连（组播受限网络兜底）
+- **推送**：本地媒体（内置 HTTP 服务流式提供，支持 Range 拖进度）/ 网络 URL
+- **遥控**：播放/暂停/停止/拖进度/音量，GENA 事件实时状态 + 1 秒轮询兜底
+- 模拟器端到端实测：发现 → 推 URL → 接收端自动起播 → 发送端播放/暂停控制 → GENA 事件（seq=1 PLAYING、seq=2 PAUSED_PLAYBACK）回传
+- 本地媒体推送（`ContentServer`）已在代码层完成，真机路径待实测（选择器自动化受 DocumentsUI 限制未在模拟器走通）
