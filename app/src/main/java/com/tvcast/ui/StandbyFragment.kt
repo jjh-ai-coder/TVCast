@@ -26,6 +26,8 @@ class StandbyFragment : Fragment() {
     view.findViewById<Button>(R.id.btn_settings).setOnClickListener {
       (activity as? MainActivity)?.openSettings()
     }
+    view.findViewById<TextView>(R.id.version_text).text = "v" + requireContext().packageManager
+      .getPackageInfo(requireContext().packageName, 0).versionName
   }
 
   override fun onStart() {

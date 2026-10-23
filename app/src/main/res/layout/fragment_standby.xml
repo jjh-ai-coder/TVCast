@@ -51,4 +51,12 @@
         android:text="@string/standby_settings"
         android:textColor="@color/textPrimary"
         android:textSize="20sp" />
+
+    <TextView
+        android:id="@+id/version_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:textColor="@color/textDim"
+        android:textSize="14sp" />
 </LinearLayout>
