@@ -165,12 +165,12 @@ class MirrorService : Service() {
         },
         onSecond = { nacks ->
           fps = framesThisSecond.getAndSet(0)
-          // 重连保活（M-D）：连续 5 秒零帧发出（VirtualDisplay 停供/链路死）且非静止画面，
-          // 周期重发 INFO 让接收端能识别会话仍在/重建；接收端 INFO 即可拉起会话
+          // 自愈（M-D）：旋转/系统抽风后 display 可能永久停供帧（真机 Android 9 复现：
+          // fps=0 永不恢复）。连续 8 秒零帧 → 重挂 Surface 强踢内容通路；仍无帧则继续重试。
           if (fps == 0) zeroFpsSeconds++ else zeroFpsSeconds = 0
-          if (zeroFpsSeconds in 3..30 && zeroFpsSeconds % 5 == 0) {
-            Log.i(TAG, "no output frames for ${zeroFpsSeconds}s, re-announcing INFO")
-            session?.updateVideoInfo(encodeWidth, encodeHeight, 30)
+          if (zeroFpsSeconds == 8 || (zeroFpsSeconds > 8 && zeroFpsSeconds % 10 == 0)) {
+            Log.i(TAG, "no frames for ${zeroFpsSeconds}s, kicking display surface")
+            kickDisplay()
           }
           Log.d(TAG, "stats fps=$fps bitrate=${bitrateMbps}Mbps frames=$sentFrames nacks=$nacks")
         },
@@ -199,6 +199,20 @@ class MirrorService : Service() {
     val metrics = DisplayMetrics()
     @Suppress("DEPRECATION") display.getRealMetrics(metrics)
     return metrics
+  }
+
+  /** 停帧自愈：把当前编码器 Surface 重新挂到 display 上，触发 SurfaceFlinger 重启内容通路 */
+  private fun kickDisplay() {
+    val display = virtualDisplay ?: return
+    val surface = encoder?.inputSurface ?: return
+    try {
+      display.setSurface(null)
+      Thread.sleep(50)
+      display.setSurface(surface)
+      Log.i(TAG, "display surface re-attached")
+    } catch (e: Exception) {
+      Log.w(TAG, "kickDisplay failed: ${e.message}")
+    }
   }
 
   /**
@@ -233,9 +247,12 @@ class MirrorService : Service() {
       enc.start()
       val display = virtualDisplay
       if (display != null) {
-        // 旋转/分辨率变化：复用 display，先 resize 再切 Surface（resize 失败时旧链路原样保留）
-        display.resize(w, h, metrics.densityDpi)
+        // 旋转/分辨率变化：复用 display（Android 14+ 一次授权只允许一个 VirtualDisplay）。
+        // 兼容性：先 setSurface 后 resize——Android 9 真机上"先 resize 后 setSurface"
+        // 会出现 display 不再供帧的死态（M-D 真机验证复现：fps=0 永久停帧），
+        // 先挂上新 Surface 再改尺寸让 SurfaceFlinger 重启内容通路。
         display.setSurface(enc.inputSurface)
+        display.resize(w, h, metrics.densityDpi)
         encoder = enc
         session?.updateVideoInfo(w, h, 30)
         Log.i(TAG, "display reused at ${w}x$h")
