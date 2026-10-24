@@ -27,4 +27,5 @@
     <string name="notification_waiting">等待投屏…</string>
     <string name="notification_connected">已连接</string>
     <string name="notification_playing">正在播放：%1$s</string>
+    <string name="notification_mirroring">正在屏幕镜像</string>
 </resources>

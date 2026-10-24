@@ -126,4 +126,28 @@ class DmrStack(
     fun setFriendlyName(name: String) {
         device.friendlyName = name
     }
+
+    /**
+     * 自检（M-D）：栈声明 started 但 HTTP 已无法服务（ROM 冻结/端口被杀/线程死亡）→
+     * 返回 false，调用方应 shutdown 后重新 start。真机教训：TCL 上出现过
+     * 进程活着但端口全失、重启 App 才恢复的死态。
+     */
+    fun isHealthy(): Boolean {
+        if (!started) return true // 未启动不算病（watchdog 会在有网时拉起）
+        val ip = boundIp ?: return false
+        return try {
+            val s = java.net.Socket()
+            s.connect(java.net.InetSocketAddress(ip, httpPort), 1500)
+            s.getOutputStream().apply {
+                write(("GET /dd.xml HTTP/1.1\r\nHost: $ip:$httpPort\r\nConnection: close\r\n\r\n").toByteArray())
+                flush()
+            }
+            s.soTimeout = 2000
+            val first = s.getInputStream().read()
+            s.close()
+            first == 'H'.code // "HTTP/1.1 200 OK"
+        } catch (_: Exception) {
+            false
+        }
+    }
 }

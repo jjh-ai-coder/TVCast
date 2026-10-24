@@ -11,7 +11,9 @@ import android.content.pm.ServiceInfo
 import android.net.wifi.WifiManager
 import android.os.Binder
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.util.Log
 import com.tvcast.dlna.DmrStack
 import com.tvcast.dlna.TransportState
@@ -39,6 +41,8 @@ class CastService : Service() {
   private var multicastLock: WifiManager.MulticastLock? = null
   private val uiListeners = CopyOnWriteArrayList<Runnable>()
   private var lastLaunchedUri: String? = null
+  private val healthHandler = Handler(Looper.getMainLooper())
+  private var healthFails = 0
 
   val deviceName: String get() = settings.deviceName
 
@@ -85,6 +89,34 @@ class CastService : Service() {
       Log.e(TAG, "mirror receiver init failed (DLNA continues)", e)
       MirrorReceiver(this) { } // 空壳占位：未 start，不绑端口，UI 判 active=false 即不启用
     }
+    startHealthLoop()
+  }
+
+  /**
+   * 周期自愈（M-D）：TCL 真机出现过"进程活着但 DLNA 端口全失、重启 App 才恢复"
+   * 的死态（ROM 冻结/网络看门狗缺陷）。每 30s 探测自己 dd.xml，失败即整栈重建；
+   * 持续失败按检查周期指数退避（30s→1m→2m→4m→…上限 16m），恢复即复位。
+   */
+  private fun startHealthLoop() {
+    healthHandler.postDelayed(object : Runnable {
+      override fun run() {
+        try {
+          if (!stack.isHealthy()) {
+            healthFails++
+            Log.w(TAG, "DLNA stack unhealthy (fail #$healthFails), rebuilding")
+            try { stack.shutdown() } catch (_: Exception) {}
+            if (!stack.start()) Log.w(TAG, "rebuild start failed (no network?)")
+            else updateNotification()
+          } else {
+            healthFails = 0
+          }
+        } catch (e: Exception) {
+          Log.e(TAG, "health loop error", e)
+        }
+        val delay = HEALTH_CHECK_MS.coerceAtMost(HEALTH_CHECK_MS shl healthFails.coerceAtMost(5))
+        healthHandler.postDelayed(this, delay)
+      }
+    }, HEALTH_CHECK_MS)
   }
 
   private fun launchUi() {
@@ -102,6 +134,7 @@ class CastService : Service() {
   override fun onBind(intent: Intent): IBinder = binder
 
   override fun onDestroy() {
+    healthHandler.removeCallbacksAndMessages(null)
     playerController.removeListener(rendererListener)
     try {
       mirrorReceiver.release()
@@ -209,7 +242,9 @@ class CastService : Service() {
         if (Build.VERSION.SDK_INT >= 23) PendingIntent.FLAG_IMMUTABLE else 0,
     )
     val playing = playerController.uri != null && playerController.state == TransportState.PLAYING
+    val mirroring = ::mirrorReceiver.isInitialized && mirrorReceiver.active
     val text = when {
+      mirroring -> getString(com.tvcast.R.string.notification_mirroring)
       playing -> getString(com.tvcast.R.string.notification_playing, playerController.title ?: "")
       playerController.uri != null -> getString(com.tvcast.R.string.notification_connected)
       else -> getString(com.tvcast.R.string.notification_waiting)
@@ -241,6 +276,7 @@ class CastService : Service() {
     private const val TAG = "TVCast/CastService"
     private const val CHANNEL_ID = "tvcast_cast"
     private const val NOTIFICATION_ID = 1001
+    private const val HEALTH_CHECK_MS = 30_000L
 
     fun start(context: Context) {
       val intent = Intent(context, CastService::class.java)

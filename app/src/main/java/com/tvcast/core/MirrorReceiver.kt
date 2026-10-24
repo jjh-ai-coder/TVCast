@@ -68,8 +68,31 @@ class MirrorReceiver(
   private val watchdog = object : Runnable {
     override fun run() {
       if (!running) return
-      val link = link
-      if (active && link != null && System.currentTimeMillis() - link.lastActivityAt > TIMEOUT_MS) {
+      // 自愈（M-D）：未在会话中但 UDP 端口意外丢失（ROM 冻结恢复后 socket 死亡）→ 重建监听
+      if (!active) {
+        val current = link
+        if (current != null && current.localPort != MirrorLinkConst.DEFAULT_PORT) {
+          Log.w(TAG, "mirror port lost (bound ${current.localPort}), rebinding")
+          try { current.stop() } catch (_: Exception) {}
+          link = null
+        }
+        if (link == null) {
+          try {
+            link = MirrorReceiverLink(
+              bindPort = MirrorLinkConst.DEFAULT_PORT,
+              onFrame = { frame -> decoder.onFrame(frame) },
+              onInfo = { info -> onInfo(info) },
+              onBye = { main.post { endSession() } },
+              log = { Log.d(TAG, it) },
+            ).also { it.start() }
+            Log.i(TAG, "mirror listener rebound on udp/${MirrorLinkConst.DEFAULT_PORT}")
+          } catch (e: Exception) {
+            Log.e(TAG, "rebind failed", e)
+          }
+        }
+      }
+      val link = link ?: run { main.postDelayed(this, 1000); return }
+      if (active && System.currentTimeMillis() - link.lastActivityAt > TIMEOUT_MS) {
         Log.i(TAG, "mirror session timed out (no data)")
         endSession()
       }

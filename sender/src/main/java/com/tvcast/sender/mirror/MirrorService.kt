@@ -67,6 +67,7 @@ class MirrorService : Service() {
   private var displayListener: DisplayManager.DisplayListener? = null
   private var lastRotation = -1
   private val framesThisSecond = AtomicInteger()
+  private var zeroFpsSeconds = 0
 
   /** 目标上限 1080p 量级（宽高对齐 2，绝大多数 AVC 编码器的要求） */
   private fun encodeSize(srcW: Int, srcH: Int, maxW: Int = 1920, maxH: Int = 1088): Pair<Int, Int> {
@@ -164,6 +165,13 @@ class MirrorService : Service() {
         },
         onSecond = { nacks ->
           fps = framesThisSecond.getAndSet(0)
+          // 重连保活（M-D）：连续 5 秒零帧发出（VirtualDisplay 停供/链路死）且非静止画面，
+          // 周期重发 INFO 让接收端能识别会话仍在/重建；接收端 INFO 即可拉起会话
+          if (fps == 0) zeroFpsSeconds++ else zeroFpsSeconds = 0
+          if (zeroFpsSeconds in 3..30 && zeroFpsSeconds % 5 == 0) {
+            Log.i(TAG, "no output frames for ${zeroFpsSeconds}s, re-announcing INFO")
+            session?.updateVideoInfo(encodeWidth, encodeHeight, 30)
+          }
           Log.d(TAG, "stats fps=$fps bitrate=${bitrateMbps}Mbps frames=$sentFrames nacks=$nacks")
         },
         onBye = {
