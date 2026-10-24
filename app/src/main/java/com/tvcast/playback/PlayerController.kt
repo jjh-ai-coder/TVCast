@@ -33,6 +33,7 @@ import java.util.concurrent.CopyOnWriteArrayList
 class PlayerController(context: Context) : RendererPlayer {
 
   private val main = Handler(Looper.getMainLooper())
+  private val appContext = context.applicationContext
 
   // OptIn 限定在此属性：不向使用方扩散 UnstableApi 要求
   @OptIn(UnstableApi::class)
@@ -177,6 +178,12 @@ class PlayerController(context: Context) : RendererPlayer {
     }
   }
 
+  /** UI 重试：当前媒体从头重新装载（清除错误态、进度归零） */
+  fun retry() {
+    val uri = _uri ?: return
+    setMedia(uri, _title ?: "", _kind ?: MediaKind.VIDEO, _meta)
+  }
+
   override fun addListener(listener: Runnable) {
     listeners += listener
   }
@@ -278,14 +285,14 @@ class PlayerController(context: Context) : RendererPlayer {
     PlaybackException.ERROR_CODE_IO_CLEARTEXT_NOT_PERMITTED,
     PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED,
     PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_TIMEOUT,
-    -> "无法访问媒体地址，请检查网络或链接"
+    -> appContext.getString(com.tvcast.R.string.playing_error_io)
 
     PlaybackException.ERROR_CODE_PARSING_CONTAINER_UNSUPPORTED,
     PlaybackException.ERROR_CODE_PARSING_MANIFEST_UNSUPPORTED,
     PlaybackException.ERROR_CODE_DECODING_FORMAT_EXCEEDS_CAPABILITIES,
     PlaybackException.ERROR_CODE_DECODING_FORMAT_UNSUPPORTED,
-    -> "设备不支持该媒体格式"
+    -> appContext.getString(com.tvcast.R.string.playing_error_format)
 
-    else -> "播放失败（${error.errorCode}）"
+    else -> appContext.getString(com.tvcast.R.string.playing_error_generic, error.errorCode)
   }
 }

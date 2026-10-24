@@ -5,5 +5,6 @@
         <item name="colorAccent">@color/accent</item>
         <item name="android:textColorPrimary">@color/textPrimary</item>
         <item name="android:textColorSecondary">@color/textDim</item>
+        <item name="android:textColorTertiary">@color/textDim</item>
     </style>
 </resources>

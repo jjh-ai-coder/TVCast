@@ -1,8 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.TVCastSender" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+    <!-- 深色固定（原 DayNight 会让浅色系统下 Material 控件与深色窗口错配） -->
+    <style name="Theme.TVCastSender" parent="Theme.MaterialComponents.NoActionBar">
         <item name="colorPrimary">@color/primary</item>
-        <item name="colorAccent">@color/accent</item>
+        <item name="colorOnPrimary">@color/onPrimary</item>
+        <item name="colorSecondary">@color/primary</item>
+        <item name="colorSurface">@color/surface</item>
+        <item name="colorOnSurface">@color/textPrimary</item>
+        <item name="colorError">@color/error</item>
         <item name="android:windowBackground">@color/bg</item>
+        <item name="android:textColorPrimary">@color/textPrimary</item>
+        <item name="android:textColorSecondary">@color/textSecondary</item>
+        <item name="android:colorControlActivated">@color/primary</item>
+        <item name="materialButtonStyle">@style/Widget.TVCast.Button</item>
+        <item name="editTextStyle">@style/Widget.TVCast.EditText</item>
     </style>
 </resources>

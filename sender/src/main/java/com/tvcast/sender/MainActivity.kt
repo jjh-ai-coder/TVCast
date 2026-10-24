@@ -4,13 +4,12 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
-import android.widget.ArrayAdapter
-import android.widget.Button
+import android.view.ViewGroup
+import android.widget.BaseAdapter
 import android.widget.EditText
 import android.widget.ListView
 import android.widget.ProgressBar
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.tvcast.dlna.cp.DeviceDescriptionParser
 import com.tvcast.dlna.cp.DlnaDevice
@@ -29,8 +28,25 @@ class MainActivity : AppCompatActivity() {
   private lateinit var listView: ListView
   private lateinit var status: TextView
   private lateinit var progress: ProgressBar
+  private lateinit var emptyState: View
   private val devices = ArrayList<DlnaDevice>()
-  private lateinit var adapter: ArrayAdapter<String>
+  private lateinit var adapter: DeviceAdapter
+
+  /** 两行卡片行：设备名 + IP:端口（原来只有一行名字） */
+  private inner class DeviceAdapter : BaseAdapter() {
+    override fun getCount(): Int = devices.size
+    override fun getItem(position: Int): DlnaDevice = devices[position]
+    override fun getItemId(position: Int): Long = position.toLong()
+    override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
+      val v = convertView ?: layoutInflater.inflate(R.layout.item_device, parent, false)
+      val d = devices[position]
+      v.findViewById<TextView>(R.id.device_name).text = d.friendlyName
+      val uri = Uri.parse(d.locationUrl)
+      v.findViewById<TextView>(R.id.device_addr).text =
+        "${uri.host ?: "?"}:${if (uri.port > 0) uri.port else 80}"
+      return v
+    }
+  }
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
@@ -38,19 +54,30 @@ class MainActivity : AppCompatActivity() {
     intent?.getStringExtra(EXTRA_DEBUG_PUSH)?.let { debugPushUri = Uri.parse(it) }
     status = findViewById(R.id.status)
     progress = findViewById(R.id.progress)
+    emptyState = findViewById(R.id.empty_state)
     findViewById<TextView>(R.id.version_text).text = "v" + packageManager
       .getPackageInfo(packageName, 0).versionName
     listView = findViewById(R.id.device_list)
-    adapter = ArrayAdapter(this, R.layout.item_device, devices.map { it.friendlyName })
+    adapter = DeviceAdapter()
     listView.adapter = adapter
     listView.setOnItemClickListener { _, _, position, _ ->
       devices.getOrNull(position)?.let { connectAndEnter(it) }
     }
-    findViewById<Button>(R.id.btn_refresh).setOnClickListener { startDiscovery() }
-    findViewById<Button>(R.id.btn_mirror).setOnClickListener {
+    findViewById<View>(R.id.btn_refresh).setOnClickListener { startDiscovery() }
+    findViewById<View>(R.id.btn_empty_refresh).setOnClickListener { startDiscovery() }
+    findViewById<View>(R.id.btn_mirror).setOnClickListener {
       startActivity(Intent(this, MirrorActivity::class.java))
     }
-    findViewById<Button>(R.id.btn_connect_ip).setOnClickListener {
+    // 图标统一代码设置（XML android:icon 在 MaterialButton 自动 inflation 下不稳定）
+    (findViewById<View>(R.id.btn_refresh) as com.google.android.material.button.MaterialButton)
+      .setIconResource(R.drawable.ic_refresh)
+    (findViewById<View>(R.id.btn_empty_refresh) as com.google.android.material.button.MaterialButton)
+      .setIconResource(R.drawable.ic_refresh)
+    (findViewById<View>(R.id.btn_mirror) as com.google.android.material.button.MaterialButton)
+      .setIconResource(R.drawable.ic_cast)
+    (findViewById<View>(R.id.btn_connect_ip) as com.google.android.material.button.MaterialButton)
+      .setIconResource(R.drawable.ic_link)
+    findViewById<View>(R.id.btn_connect_ip).setOnClickListener {
       val text = findViewById<EditText>(R.id.manual_ip).text?.toString()?.trim().orEmpty()
       connectByAddress(text)
     }
@@ -82,9 +109,10 @@ class MainActivity : AppCompatActivity() {
 
   private fun startDiscovery() {
     progress.visibility = View.VISIBLE
+    emptyState.visibility = View.GONE
     status.text = getString(R.string.searching)
     devices.clear()
-    adapter.clear()
+    adapter.notifyDataSetChanged()
     thread(name = "ssdp-search") {
       val hits = try {
         SsdpSearch.search(waitMs = 3500)
@@ -96,8 +124,8 @@ class MainActivity : AppCompatActivity() {
       runOnUiThread {
         progress.visibility = View.GONE
         devices.addAll(found)
-        adapter.addAll(found.map { it.friendlyName })
         adapter.notifyDataSetChanged()
+        renderListState()
         status.text =
           if (found.isEmpty()) getString(R.string.no_device) else getString(R.string.found_n, found.size)
         // 自动化：唯一设备 + 调试推送意图 → 直接连入
@@ -106,6 +134,12 @@ class MainActivity : AppCompatActivity() {
         }
       }
     }
+  }
+
+  private fun renderListState() {
+    val searching = progress.visibility == View.VISIBLE
+    emptyState.visibility = if (devices.isEmpty() && !searching) View.VISIBLE else View.GONE
+    listView.visibility = if (devices.isEmpty()) View.GONE else View.VISIBLE
   }
 
   /** 手动直连：支持 "192.168.1.5:49152" 或裸 IP（默认 80 端口） */
@@ -117,6 +151,7 @@ class MainActivity : AppCompatActivity() {
     val port = parts.getOrNull(1)?.toIntOrNull() ?: 80
     if (host.isEmpty()) return
     progress.visibility = View.VISIBLE
+    emptyState.visibility = View.GONE
     status.text = getString(R.string.connecting)
     thread(name = "manual-connect") {
       val device = DeviceDescriptionParser.fetchAndParse("http://$host:$port/dd.xml")
@@ -126,7 +161,6 @@ class MainActivity : AppCompatActivity() {
           connectAndEnter(device)
         } else {
           status.text = getString(R.string.connect_failed)
-          Toast.makeText(this, R.string.connect_failed, Toast.LENGTH_SHORT).show()
         }
       }
     }

@@ -1,8 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="bg">#0B0F14</color>
+    <color name="surface">#121A26</color>
+    <color name="surfaceElevated">#1A2332</color>
+    <color name="outline">#2A3646</color>
     <color name="primary">#4CC3FF</color>
-    <color name="accent">#4CC3FF</color>
+    <color name="onPrimary">#04121C</color>
     <color name="textPrimary">#FFFFFF</color>
-    <color name="textDim">#8AA0B4</color>
+    <color name="textSecondary">#8AA0B4</color>
+    <color name="success">#4CCF87</color>
+    <color name="error">#FF6B6B</color>
+    <color name="warning">#FFC55C</color>
+    <color name="rippleError">#33FF6B6B</color>
+    <color name="launcherBg">#0E1621</color>
 </resources>

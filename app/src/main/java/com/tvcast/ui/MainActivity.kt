@@ -99,6 +99,7 @@ class MainActivity : AppCompatActivity() {
     }
     if (current == null || current.javaClass != targetClass) {
       supportFragmentManager.beginTransaction()
+        .setCustomAnimations(com.tvcast.R.anim.fade_in, com.tvcast.R.anim.fade_out)
         .replace(com.tvcast.R.id.container, targetClass.getDeclaredConstructor().newInstance())
         .commitAllowingStateLoss()
     } else {

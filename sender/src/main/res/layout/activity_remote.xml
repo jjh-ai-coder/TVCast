@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:scrollbars="none">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -9,50 +11,90 @@
         android:orientation="vertical"
         android:padding="20dp">
 
-        <TextView
-            android:id="@+id/device_name"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textColor="@color/textPrimary"
-            android:textSize="20sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/media_title"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:ellipsize="end"
-            android:maxLines="1"
-            android:textColor="@color/textDim"
-            android:textSize="14sp" />
-
-        <TextView
-            android:id="@+id/state_text"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:textColor="@color/primary"
-            android:textSize="16sp" />
-
-        <TextView
-            android:id="@+id/position_text"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:textColor="@color/textDim"
-            android:textSize="13sp" />
-
-        <SeekBar
-            android:id="@+id/seek_bar"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp" />
-
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/device_name"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textAppearance="@style/TextAppearance.TVCast.Title" />
+
+            <Button
+                android:id="@+id/btn_disconnect"
+                style="@style/Widget.TVCast.Button.Text.Destructive"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/disconnect" />
+        </LinearLayout>
+
+        <!-- 正在投放信息卡 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/bg_card"
+            android:orientation="vertical"
+            android:padding="20dp">
+
+            <TextView
+                android:id="@+id/media_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="2"
+                android:text="@string/now_playing_none"
+                android:textColor="@color/textPrimary"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <View
+                    android:id="@+id/state_dot"
+                    android:layout_width="10dp"
+                    android:layout_height="10dp"
+                    android:background="@drawable/dot_primary" />
+
+                <TextView
+                    android:id="@+id/state_text"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_weight="1"
+                    android:textAppearance="@style/TextAppearance.TVCast.Caption"
+                    android:textColor="@color/textSecondary" />
+
+                <TextView
+                    android:id="@+id/position_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="@style/TextAppearance.TVCast.Caption" />
+            </LinearLayout>
+
+            <SeekBar
+                android:id="@+id/seek_bar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:progressTint="@color/primary"
+                android:thumbTint="@color/primary" />
+        </LinearLayout>
+
+        <!-- 传输控制：图标按钮（play/pause 图标随状态切换） -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
             android:orientation="horizontal">
 
             <Button
@@ -60,56 +102,122 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="▶ 播放" />
+                android:contentDescription="@string/cd_play"
+                android:icon="@drawable/ic_play"
+                android:text="@string/cd_play" />
 
             <Button
                 android:id="@+id/btn_stop"
+                style="@style/Widget.TVCast.Button.Outlined"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="10dp"
+                android:layout_marginStart="12dp"
                 android:layout_weight="1"
-                android:text="⏹ 停止" />
+                android:contentDescription="@string/cd_stop"
+                android:icon="@drawable/ic_stop"
+                android:text="@string/cd_stop" />
+        </LinearLayout>
+
+        <!-- 音量行：设备支持 RenderingControl 时才显示 -->
+        <LinearLayout
+            android:id="@+id/volume_row"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/bg_card"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="16dp"
+            android:paddingTop="14dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="14dp"
+            android:visibility="gone">
 
             <Button
-                android:id="@+id/btn_disconnect"
+                android:id="@+id/btn_vol_down"
+                style="@style/Widget.TVCast.Button.Icon"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:contentDescription="@string/cd_vol_down"
+                android:icon="@drawable/ic_volume_down" />
+
+            <SeekBar
+                android:id="@+id/volume_bar"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="10dp"
+                android:layout_marginStart="12dp"
+                android:layout_marginEnd="12dp"
                 android:layout_weight="1"
-                android:text="@string/disconnect" />
+                android:max="100"
+                android:progressTint="@color/primary"
+                android:thumbTint="@color/primary" />
+
+            <Button
+                android:id="@+id/btn_vol_up"
+                style="@style/Widget.TVCast.Button.Icon"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:contentDescription="@string/cd_vol_up"
+                android:icon="@drawable/ic_volume_up" />
         </LinearLayout>
 
         <Button
             android:id="@+id/btn_pick_local"
+            style="@style/Widget.TVCast.Button.Outlined"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
+            android:layout_marginTop="16dp"
+            android:icon="@drawable/ic_folder"
             android:text="@string/pick_local" />
 
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/bg_card"
+            android:orientation="vertical"
+            android:padding="20dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/push_url_hint"
+                android:textAppearance="@style/TextAppearance.TVCast.Caption" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <EditText
+                    android:id="@+id/media_url"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:hint="@string/url_input_hint"
+                    android:imeOptions="actionSend"
+                    android:inputType="textUri"
+                    android:maxLines="1" />
+
+                <Button
+                    android:id="@+id/btn_push_url"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:text="@string/push" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- inline 操作反馈（替代 Toast，3 秒自动清除） -->
         <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:text="@string/push_url_hint"
-            android:textColor="@color/textDim"
-            android:textSize="13sp" />
-
-        <EditText
-            android:id="@+id/media_url"
+            android:id="@+id/result_text"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:hint="http://…"
-            android:inputType="textUri"
-            android:textColor="@color/textPrimary"
-            android:textColorHint="@color/textDim"
-            android:textSize="13sp" />
-
-        <Button
-            android:id="@+id/btn_push_url"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:text="@string/push" />
+            android:layout_marginTop="12dp"
+            android:textAppearance="@style/TextAppearance.TVCast.Caption"
+            android:textColor="@color/error"
+            android:visibility="gone" />
     </LinearLayout>
 </ScrollView>

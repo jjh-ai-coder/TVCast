@@ -5,69 +5,143 @@
     android:orientation="vertical"
     android:padding="20dp">
 
-    <TextView
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/app_name"
-        android:textColor="@color/textPrimary"
-        android:textSize="26sp"
-        android:textStyle="bold" />
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
 
-    <TextView
-        android:id="@+id/status"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:textColor="@color/textDim"
-        android:textSize="14sp" />
+        <ImageView
+            android:layout_width="26dp"
+            android:layout_height="26dp"
+            android:contentDescription="@string/app_name"
+            android:src="@drawable/ic_cast"
+            android:tint="@color/primary" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:text="@string/app_name"
+            android:textAppearance="@style/TextAppearance.TVCast.Title" />
+    </LinearLayout>
 
     <TextView
         android:id="@+id/version_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="2dp"
-        android:textColor="@color/textDim"
-        android:textSize="11sp" />
+        android:layout_marginStart="36dp"
+        android:textAppearance="@style/TextAppearance.TVCast.Caption" />
 
-    <ProgressBar
-        android:id="@+id/progress"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:visibility="gone" />
+        android:layout_marginTop="18dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
 
-    <ListView
-        android:id="@+id/device_list"
+        <ProgressBar
+            android:id="@+id/progress"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:indeterminateTint="@color/primary"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/status"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:textAppearance="@style/TextAppearance.TVCast.Caption" />
+
+        <Button
+            android:id="@+id/btn_refresh"
+            style="@style/Widget.TVCast.Button.Text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:icon="@drawable/ic_refresh"
+            android:text="@string/refresh" />
+    </LinearLayout>
+
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_marginTop="8dp"
-        android:layout_weight="1" />
+        android:layout_weight="1">
 
-    <Button
-        android:id="@+id/btn_refresh"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/refresh" />
+        <ListView
+            android:id="@+id/device_list"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:divider="@android:color/transparent"
+            android:dividerHeight="4dp"
+            android:scrollbars="none" />
+
+        <!-- 空态：图标 + 引导 + 重试 -->
+        <LinearLayout
+            android:id="@+id/empty_state"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <ImageView
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:contentDescription="@string/empty_title"
+                android:src="@drawable/ic_tv"
+                android:tint="@color/outline" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="@string/empty_title"
+                android:textAppearance="@style/TextAppearance.TVCast.Section" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:gravity="center"
+                android:lineSpacingExtra="4dp"
+                android:text="@string/empty_body"
+                android:textAppearance="@style/TextAppearance.TVCast.Caption" />
+
+            <Button
+                android:id="@+id/btn_empty_refresh"
+                style="@style/Widget.TVCast.Button.Outlined"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:icon="@drawable/ic_refresh"
+                android:text="@string/refresh" />
+        </LinearLayout>
+    </FrameLayout>
 
     <Button
         android:id="@+id/btn_mirror"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:icon="@drawable/ic_cast"
         android:text="@string/screen_mirror" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="20dp"
         android:text="@string/manual_hint"
-        android:textColor="@color/textDim"
-        android:textSize="13sp" />
+        android:textAppearance="@style/TextAppearance.TVCast.Caption" />
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
+        android:layout_marginTop="8dp"
+        android:gravity="center_vertical"
         android:orientation="horizontal">
 
         <EditText
@@ -75,16 +149,18 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:hint="192.168.1.5:49152"
+            android:hint="@string/manual_ip_hint"
+            android:imeOptions="actionGo"
             android:inputType="textUri"
-            android:textColor="@color/textPrimary"
-            android:textColorHint="@color/textDim"
-            android:textSize="14sp" />
+            android:maxLines="1" />
 
         <Button
             android:id="@+id/btn_connect_ip"
+            style="@style/Widget.TVCast.Button.Outlined"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:icon="@drawable/ic_link"
             android:text="@string/connect" />
     </LinearLayout>
 </LinearLayout>

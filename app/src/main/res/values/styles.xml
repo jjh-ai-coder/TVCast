@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 点号命名的空基类：隐式父链要求祖先存在 -->
+    <style name="TextAppearance.TVCast" parent="" />
+    <style name="Widget.TVCast" parent="" />
+
+    <!-- 字阶：Display 44 / Headline 32 / Title 26 / Subtitle 20 / Body 16 / Caption 13 -->
+    <style name="TextAppearance.TVCast.Display">
+        <item name="android:textSize">44sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/textPrimary</item>
+    </style>
+
+    <style name="TextAppearance.TVCast.Headline">
+        <item name="android:textSize">32sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/textPrimary</item>
+    </style>
+
+    <style name="TextAppearance.TVCast.Title">
+        <item name="android:textSize">26sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/textPrimary</item>
+    </style>
+
+    <style name="TextAppearance.TVCast.Subtitle">
+        <item name="android:textSize">20sp</item>
+        <item name="android:textColor">@color/textPrimary</item>
+    </style>
+
+    <style name="TextAppearance.TVCast.Body">
+        <item name="android:textSize">16sp</item>
+        <item name="android:textColor">@color/textDim</item>
+    </style>
+
+    <style name="TextAppearance.TVCast.Caption">
+        <item name="android:textSize">13sp</item>
+        <item name="android:textColor">@color/textDim</item>
+    </style>
+
+    <!-- TV 按钮：聚焦 = accent 描边 + 表面提亮（D-pad 焦点必须一眼可见） -->
+    <style name="Widget.TVCast.Button">
+        <item name="android:background">@drawable/btn_tvc</item>
+        <item name="android:minHeight">@dimen/button_height</item>
+        <item name="android:paddingStart">@dimen/space_xl</item>
+        <item name="android:paddingEnd">@dimen/space_xl</item>
+        <item name="android:textSize">18sp</item>
+        <item name="android:textColor">@color/textPrimary</item>
+        <item name="android:focusable">true</item>
+    </style>
+
+    <style name="Widget.TVCast.Button.Primary">
+        <item name="android:background">@drawable/btn_tvc_primary</item>
+        <item name="android:textColor">@color/onPrimary</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+</resources>
