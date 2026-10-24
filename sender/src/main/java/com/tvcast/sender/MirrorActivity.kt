@@ -2,8 +2,10 @@ package com.tvcast.sender
 
 import android.app.Activity
 import android.content.Intent
+import android.media.projection.MediaProjectionConfig
 import android.media.projection.MediaProjectionManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -82,7 +84,14 @@ class MirrorActivity : AppCompatActivity() {
     }
     pendingTarget = target
     val manager = getSystemService(MediaProjectionManager::class.java)
-    startActivityForResult(manager.createScreenCaptureIntent(), REQ_PROJECTION)
+    // Android 14+ 默认弹"单个应用"选择器：投的是单个 App（如 TVCast 自己），切到别的
+    // 界面内容即停止 → 电视超时断开（表现为"切界面就断"）。强制整屏模式，杜绝误选。
+    val intent = if (Build.VERSION.SDK_INT >= 34) {
+      manager.createScreenCaptureIntent(MediaProjectionConfig.createConfigForDefaultDisplay())
+    } else {
+      manager.createScreenCaptureIntent()
+    }
+    startActivityForResult(intent, REQ_PROJECTION)
   }
 
   @Deprecated("Deprecated in Java")
