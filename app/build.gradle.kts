@@ -20,8 +20,8 @@ android {
         applicationId = "com.tvcast"
         minSdk = 21
         targetSdk = 34
-        versionCode = 6
-        versionName = "2.0.2"
+        versionCode = 10
+        versionName = "2.1.0-mirror.beta4"
     }
 
     signingConfigs {
@@ -61,6 +61,7 @@ android {
 
 dependencies {
     implementation(project(":dlna"))
+    implementation(project(":transport"))
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.aar"))))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)

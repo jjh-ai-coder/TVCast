@@ -31,6 +31,8 @@ class CastService : Service() {
   private val settings by lazy { Settings(this) }
   lateinit var playerController: PlayerController
     private set
+  lateinit var mirrorReceiver: MirrorReceiver
+    private set
   private lateinit var volumeControl: SystemVolumeControl
   private lateinit var stack: DmrStack
   private lateinit var watchdog: NetworkWatchdog
@@ -72,6 +74,27 @@ class CastService : Service() {
     }
     watchdog = NetworkWatchdog(this) { ip -> stack.onIpChanged(ip) }
     watchdog.start()
+    // 屏幕镜像接收：常驻监听 UDP 9420，会话开始即唤起 UI。
+    // 镜像属附加能力，任何异常不得拖垮 DLNA 主服务（真机教训：曾致投屏整体不可用）
+    mirrorReceiver = try {
+      MirrorReceiver(this) {
+        notifyUi()
+        if (mirrorReceiver.active) launchUi()
+      }.also { it.start() }
+    } catch (e: Exception) {
+      Log.e(TAG, "mirror receiver init failed (DLNA continues)", e)
+      MirrorReceiver(this) { } // 空壳占位：未 start，不绑端口，UI 判 active=false 即不启用
+    }
+  }
+
+  private fun launchUi() {
+    val intent = Intent(this, MainActivity::class.java)
+      .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+    try {
+      startActivity(intent)
+    } catch (e: Exception) {
+      Log.w(TAG, "launch MainActivity blocked: ${e.message}")
+    }
   }
 
   override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int = START_STICKY
@@ -80,6 +103,10 @@ class CastService : Service() {
 
   override fun onDestroy() {
     playerController.removeListener(rendererListener)
+    try {
+      mirrorReceiver.release()
+    } catch (_: Exception) {
+    }
     try {
       watchdog.stop()
     } catch (_: Exception) {

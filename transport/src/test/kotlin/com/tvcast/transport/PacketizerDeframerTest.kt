@@ -9,6 +9,40 @@ import org.junit.Test
 
 class PacketizerDeframerTest {
 
+  @Test
+  fun `fully lost frame is skipped so delivery never stalls`() {
+    val delivered = ArrayList<CompletedFrame>()
+    var now = 0L
+    val deframer = FrameDeframer(
+      onFrame = { delivered.add(it) },
+      onMissing = { _, _ -> },
+      nackDelayMs = 4,
+      giveUpMs = 200,
+      clock = { now },
+    )
+
+    fun send(seq: Long, size: Int = 3000) {
+      FramePacketizer().packetize(seq, timestampMs = now, keyframe = seq % 2 == 0L, frame = ByteArray(size)) { d ->
+        deframer.receive(WireFormat.decodeData(d, d.size)!!)
+      }
+    }
+
+    send(0)            // 正常交付，游标停在 1
+    send(2); send(3)   // 帧 1 整帧全丢（一个包都没到）
+    var t = 5L
+    while (t <= 700) {
+      now = t
+      deframer.tick()  // 游标经 giveUpMs 后跳过 1，2/3 缓存于就绪队列随后按序交付，不卡死
+      t += 5
+    }
+    assertEquals(listOf(0L, 2L, 3L), delivered.map { it.frameSeq })
+
+    now = 720
+    send(4)            // 后续新帧仍能按序交付
+    deframer.tick()
+    assertEquals(listOf(0L, 2L, 3L, 4L), delivered.map { it.frameSeq })
+  }
+
   /** 组装：帧 → 分片 → （可选乱序/丢包）→ 重组，返回交付的帧 */
   private fun runFrames(
     frames: List<Pair<Boolean, ByteArray>>,

@@ -13,14 +13,14 @@ val keystoreProps = Properties().apply {
 
 android {
     namespace = "com.tvcast.sender"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.tvcast.sender"
         minSdk = 24
         targetSdk = 34
-        versionCode = 3
-        versionName = "2.0.2"
+        versionCode = 7
+        versionName = "2.1.0-mirror.beta4"
     }
 
     signingConfigs {
@@ -56,6 +56,7 @@ android {
 
 dependencies {
     implementation(project(":dlna"))
+    implementation(project(":transport"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
