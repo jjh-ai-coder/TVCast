@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 可聚焦卡片行（设置页整行点击）：同 btn_tvc 但用卡片圆角 -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_focused="true">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/surfaceElevated" />
+            <stroke android:width="2dp" android:color="@color/accent" />
+            <corners android:radius="@dimen/card_radius" />
+        </shape>
+    </item>
+    <item android:state_pressed="true">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/outline" />
+            <corners android:radius="@dimen/card_radius" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/surface" />
+            <corners android:radius="@dimen/card_radius" />
+        </shape>
+    </item>
+</selector>

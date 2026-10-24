@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- TV overscan 安全区：四周内容不贴边（TCL 等电视会裁掉边缘） -->
+    <dimen name="safe_margin">48dp</dimen>
+
+    <!-- 4dp 基数间距刻度 -->
+    <dimen name="space_xs">4dp</dimen>
+    <dimen name="space_sm">8dp</dimen>
+    <dimen name="space_md">16dp</dimen>
+    <dimen name="space_lg">24dp</dimen>
+    <dimen name="space_xl">32dp</dimen>
+    <dimen name="space_xxl">48dp</dimen>
+
+    <dimen name="card_radius">12dp</dimen>
+    <dimen name="button_radius">10dp</dimen>
+    <dimen name="button_height">56dp</dimen>
+</resources>

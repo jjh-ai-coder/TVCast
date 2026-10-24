@@ -166,6 +166,9 @@ class CastService : Service() {
     return "http://$ip:${stack.httpPort}"
   }
 
+  /** 待机页大字展示：裸 IP（如 192.168.1.10），未联网返回 null */
+  fun ipText(): String? = stack.boundIp
+
   fun renameDevice(name: String) {
     settings.setDeviceName(name)
     stack.setFriendlyName(settings.deviceName)

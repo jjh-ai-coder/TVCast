@@ -11,7 +11,7 @@ import androidx.fragment.app.Fragment
 import com.tvcast.R
 import com.tvcast.core.CastService
 
-/** 屏幕镜像页：全屏 SurfaceView 渲染解码输出 + 状态角标；返回键退出镜像（反发 BYE） */
+/** 屏幕镜像页：全屏 SurfaceView 渲染解码输出 + 状态徽章；返回键退出镜像（反发 BYE） */
 class MirrorFragment : Fragment() {
 
   private var service: CastService? = null
@@ -35,6 +35,15 @@ class MirrorFragment : Fragment() {
         service?.mirrorReceiver?.decoder?.setSurface(null)
       }
     })
+    // 退出提示 5 秒后淡出（操作提示不必常驻；会话期间镜像画面是主角）
+    val hint = view.findViewById<View>(R.id.mirror_exit_hint)
+    hint.postDelayed({
+      if (isAdded && hint.windowToken != null) {
+        hint.animate().alpha(0f).setDuration(500).withEndAction {
+          if (isAdded) hint.visibility = View.INVISIBLE
+        }.start()
+      }
+    }, 5000)
   }
 
   override fun onStart() {

@@ -8,12 +8,17 @@
     <string name="connecting">正在连接…</string>
     <string name="connect_failed">连接失败：请检查地址（电视待机页显示 http://IP:端口）</string>
     <string name="manual_hint">手动直连（电视待机页显示的 IP:端口）</string>
+    <string name="manual_ip_hint">如 192.168.1.5:49152</string>
     <string name="connect">连接</string>
     <string name="refresh">重新搜索</string>
+    <string name="empty_title">未发现投屏设备</string>
+    <string name="empty_body">确认电视已打开 TVCast，\n且与手机连接同一网络</string>
 
     <string name="casting_to">正在控制：%1$s</string>
+    <string name="now_playing_none">未在播放</string>
     <string name="pick_local">选择本地媒体</string>
-    <string name="push_url_hint">输入网络媒体 URL 推送到电视</string>
+    <string name="push_url_hint">推送网络媒体 URL 到电视</string>
+    <string name="url_input_hint">http://…</string>
     <string name="push">推送</string>
     <string name="now_casting">正在投：%1$s</string>
     <string name="pushing">推送中…</string>
@@ -26,19 +31,32 @@
     <string name="local_server_failed">本地媒体服务启动失败</string>
     <string name="action_failed">操作失败（%1$d：%2$s）</string>
     <string name="action_failed_short">操作失败（%1$s）</string>
-    <string name="disconnect">断开连接</string>
+    <string name="disconnect">断开</string>
+    <string name="volume_label">音量</string>
+    <string name="cd_play">播放</string>
+    <string name="cd_pause">暂停</string>
+    <string name="cd_stop">停止</string>
+    <string name="cd_vol_down">减小音量</string>
+    <string name="cd_vol_up">增大音量</string>
 
     <string name="screen_mirror">屏幕镜像</string>
     <string name="mirror_title">屏幕镜像</string>
-    <string name="mirror_target_hint">电视端地址（IP 或 IP:端口，默认端口 9420；电视需为支持镜像的 TVCast 版本）</string>
+    <string name="mirror_ip_hint">电视 IP 或 IP:端口</string>
+    <string name="mirror_target_hint">默认端口 9420；电视需为支持镜像的 TVCast 版本</string>
     <string name="mirror_start">开始镜像</string>
     <string name="mirror_stop">停止镜像</string>
     <string name="mirror_starting">已授权，正在启动镜像…</string>
+    <string name="mirror_running">镜像进行中，画面已在电视上显示</string>
     <string name="mirror_idle">未在镜像</string>
     <string name="mirror_denied">未授予屏幕录制权限，无法镜像</string>
     <string name="mirror_bad_target">请输入有效的电视 IP 地址</string>
-    <string name="mirror_stats">镜像中 %1$d×%2$d · %3$d fps · %4$d Mbps · 已发送 %5$d 帧</string>
+    <string name="mirror_error_grant_revoked">屏幕录制授权已失效（系统限制一次授权只允许一路采集），请重新开始镜像</string>
+    <string name="mirror_error_denied">屏幕录制被系统拒绝，请重新授权</string>
     <string name="mirror_error">镜像出错：%1$s</string>
+    <string name="stat_resolution">分辨率</string>
+    <string name="stat_fps">帧率</string>
+    <string name="stat_bitrate">码率</string>
+    <string name="stat_frames">已发送帧</string>
     <string name="mirror_notif_channel">屏幕镜像</string>
     <string name="mirror_notif_title">正在镜像手机屏幕到电视</string>
 </resources>

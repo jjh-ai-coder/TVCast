@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- adaptive 前景：安全区内居中的播放三角 + 底条（与旧图标同构） -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M33,74h42v5h-42z" />
+    <path
+        android:fillColor="#4CC3FF"
+        android:pathData="M44,32l26,17l-26,17z" />
+</vector>

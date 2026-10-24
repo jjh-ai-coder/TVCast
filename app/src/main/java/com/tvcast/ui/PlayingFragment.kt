@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.fragment.app.Fragment
@@ -14,11 +15,12 @@ import com.tvcast.dlna.MediaKind
 import com.tvcast.dlna.TransportState
 import com.tvcast.playback.ImageDisplayer
 
-/** 播放页：视频 PlayerView / 图片 Glide / 音频黑底+标题；错误覆盖层；播放期常亮 */
+/** 播放页：视频 PlayerView / 图片 Glide / 音频黑底+标题；错误覆盖层带重试；播放期常亮 */
 class PlayingFragment : Fragment() {
 
   private var service: CastService? = null
   private var lastLoadedImageUri: String? = null
+  private var controllerVisible = false
   private val uiListener = Runnable { refresh() }
 
   override fun onCreateView(
@@ -27,12 +29,25 @@ class PlayingFragment : Fragment() {
     savedInstanceState: Bundle?,
   ): View = inflater.inflate(R.layout.fragment_playing, container, false)
 
+  override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+    view.findViewById<Button>(R.id.btn_retry).setOnClickListener {
+      (activity as? MainActivity)?.castService?.playerController?.retry()
+    }
+  }
+
   override fun onResume() {
     super.onResume()
     val view = playerView()
     (activity as? MainActivity)?.castService?.playerController?.let { controller ->
       view?.let { controller.attachView(it) }
     }
+    // 标题跟随控制条显隐（media3 控制条在触屏/D-pad 交互时出现，数秒后隐藏）
+    view?.setControllerVisibilityListener(
+      PlayerView.ControllerVisibilityListener { visibility ->
+        controllerVisible = visibility == View.VISIBLE
+        updateTitleVisibility()
+      },
+    )
     refresh()
   }
 
@@ -68,6 +83,7 @@ class PlayingFragment : Fragment() {
     if (error != null) {
       root.findViewById<TextView>(R.id.error_text).text = error
     }
+    updateTitleVisibility()
 
     val playerView = root.findViewById<PlayerView>(R.id.player_view)
     val imageView = root.findViewById<ImageView>(R.id.image_view)
@@ -87,5 +103,19 @@ class PlayingFragment : Fragment() {
     }
 
     root.keepScreenOn = player.state == TransportState.PLAYING || player.kind == MediaKind.IMAGE
+  }
+
+  /** 标题显隐规则：暂停/缓冲/出错时常显，播放中跟随控制条 */
+  private fun updateTitleVisibility() {
+    val root = view ?: return
+    val player = service?.playerController
+      ?: (activity as? MainActivity)?.castService?.playerController
+      ?: return
+    val show = player.lastError != null ||
+      player.state != TransportState.PLAYING ||
+      controllerVisible
+    val v = if (show) View.VISIBLE else View.GONE
+    root.findViewById<View>(R.id.title_scrim).visibility = v
+    root.findViewById<View>(R.id.media_title).visibility = v
   }
 }

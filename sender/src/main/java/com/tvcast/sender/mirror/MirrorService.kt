@@ -94,7 +94,7 @@ class MirrorService : Service() {
         @Suppress("DEPRECATION")
         val data = intent.getParcelableExtra<Intent>(EXTRA_PROJECTION_DATA)
         if (host.isNullOrBlank() || data == null) {
-          lastError = "missing host or projection grant"
+          lastError = getString(R.string.mirror_error_denied)
           stopSelf()
           return START_NOT_STICKY
         }
@@ -126,9 +126,15 @@ class MirrorService : Service() {
     }
     val notification = builder
       .setContentTitle(getString(R.string.mirror_notif_title))
-      .setSmallIcon(android.R.drawable.ic_media_play)
+      .setSmallIcon(R.drawable.ic_cast)
       .setOngoing(true)
-      .addAction(Notification.Action.Builder(null, getString(R.string.mirror_stop), stopIntent).build())
+      .addAction(
+        Notification.Action.Builder(
+          android.graphics.drawable.Icon.createWithResource(this, R.drawable.ic_stop),
+          getString(R.string.mirror_stop),
+          stopIntent,
+        ).build(),
+      )
       .build()
     if (Build.VERSION.SDK_INT >= 29) {
       startForeground(NOTIF_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION)
@@ -139,9 +145,9 @@ class MirrorService : Service() {
 
   private fun friendlyError(e: Exception): String = when {
     e is SecurityException && e.message?.contains("resultData") == true ->
-      "屏幕录制授权已失效（系统限制一次授权只允许一路采集），请重新点击\"开始镜像\""
+      getString(R.string.mirror_error_grant_revoked)
     e is SecurityException ->
-      "屏幕录制被系统拒绝，请重新授权"
+      getString(R.string.mirror_error_denied)
     else -> e.message ?: e.javaClass.simpleName
   }
 
@@ -188,7 +194,7 @@ class MirrorService : Service() {
       Log.i(TAG, "mirror started -> $host:$port at ${encodeWidth}x${encodeHeight}")
     } catch (e: Exception) {
       Log.e(TAG, "startMirror failed", e)
-      lastError = e.message ?: e.javaClass.simpleName
+      lastError = friendlyError(e)
       stopMirror()
       stopSelf()
     }
@@ -239,7 +245,7 @@ class MirrorService : Service() {
         s.send(tsMs, keyframe, bytes)
       },
       onError = { e ->
-        lastError = e.message ?: e.javaClass.simpleName
+        lastError = friendlyError(e)
         mainHandler.post { stopMirror(); stopSelf() }
       },
     )

@@ -1,7 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="background">#0B0F14</color>
+    <color name="surface">#121A26</color>
+    <color name="surfaceElevated">#1A2332</color>
+    <color name="outline">#2A3646</color>
     <color name="textPrimary">#FFFFFF</color>
     <color name="textDim">#8AA0B4</color>
     <color name="accent">#4CC3FF</color>
+    <color name="accentDeep">#2FA6E0</color>
+    <color name="onPrimary">#04121C</color>
+    <color name="success">#4CCF87</color>
+    <color name="error">#FF6B6B</color>
 </resources>
