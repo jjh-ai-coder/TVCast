@@ -2,6 +2,7 @@ package com.tvcast.sender
 
 import android.content.Intent
 import android.net.Uri
+import android.os.SystemClock
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -46,6 +47,8 @@ class RemoteActivity : AppCompatActivity() {
   private lateinit var resultText: TextView
 
   private val clearResult = Runnable { resultText.visibility = View.GONE }
+  private var pollFailures = 0
+  private var lastReconnectAt = 0L
 
   private val pollLoop = object : Runnable {
     override fun run() {
@@ -228,10 +231,14 @@ class RemoteActivity : AppCompatActivity() {
 
   private fun onPolled(info: com.tvcast.dlna.cp.TransportInfo?) {
     if (info == null) {
+      pollFailures++
       stateText.text = getString(R.string.device_offline)
       setDotColor(R.color.error)
+      // 连续失败 = 电视端地址失效（栈自愈换端口/IP 变化），自动重连刷新缓存
+      if (pollFailures >= 2) tryReconnect()
       return
     }
+    pollFailures = 0
     lastPolledState = info.state
     durationSec = info.durationSeconds
     positionSec = info.positionSeconds
@@ -393,7 +400,27 @@ class RemoteActivity : AppCompatActivity() {
     when (result) {
       is CpResult.Ok -> resultText.visibility = View.GONE
       is CpResult.Fault -> showInline(getString(R.string.action_failed, result.errorCode, result.description))
-      is CpResult.Error -> showInline(getString(R.string.action_failed_short, result.message))
+      is CpResult.Error -> {
+        showInline(getString(R.string.action_failed_short, result.message))
+        // 连接类失败 → 触发自动重连（地址可能已过期）
+        if (result.message?.contains("onnect", ignoreCase = true) == true) tryReconnect()
+      }
+    }
+  }
+
+  /** 自动重连（10s 节流）：成功后轮询自然恢复；失败保持离线提示，不打断用户 */
+  private fun tryReconnect() {
+    val now = SystemClock.elapsedRealtime()
+    if (now - lastReconnectAt < RECONNECT_THROTTLE_MS) return
+    lastReconnectAt = now
+    if (CastSession.host() == null) return
+    stateText.text = getString(R.string.reconnecting)
+    setDotColor(R.color.warning)
+    CastSession.reconnectAsync { ok ->
+      if (!ok && !isFinishing) {
+        stateText.text = getString(R.string.device_offline)
+        setDotColor(R.color.error)
+      }
     }
   }
 
@@ -412,6 +439,7 @@ class RemoteActivity : AppCompatActivity() {
 
   private companion object {
     const val POLL_MS = 1000L
+    const val RECONNECT_THROTTLE_MS = 10_000L
     const val EXTRA_DEBUG_PUSH = "debug_push_uri"
     private const val TAG = "TVCast/Sender"
   }

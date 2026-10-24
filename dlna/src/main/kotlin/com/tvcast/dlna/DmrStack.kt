@@ -60,14 +60,20 @@ class DmrStack(
         if (started) gena.notify(GenaService.RENDERING_CONTROL) { LastChangeXml.rcsSnapshot(volumeControl) }
     }
 
-    /** @return false 表示无可用网络 */
-    fun start(): Boolean {
+    /**
+     * @param preferredHttpPort 上次成功绑定的端口（粘性端口）：控制点缓存 LOCATION，
+     *   栈重建（健康自愈/网络恢复）必须沿用同一端口，否则手机端全部请求失联。
+     *   0 = 首次启动，默认 61000——必须避开 Linux 临时端口范围（32768-60999），
+     *   否则设备自己的出站连接会随机撞占粘性端口，重建时绑不上即漂移。
+     * @return false 表示无可用网络
+     */
+    fun start(preferredHttpPort: Int = 0): Boolean {
         val ip = ipProvider()
         if (ip == null) {
             log("DmrStack: no local IP, start aborted")
             return false
         }
-        httpPort = httpServer.start(preferredPort = 80)
+        httpPort = httpServer.start(preferredPort = if (preferredHttpPort > 0) preferredHttpPort else 61000)
         boundIp = ip
         device.baseUrl = "http://$ip:$httpPort"
         gena.setSnapshotProvider(GenaService.AV_TRANSPORT) { LastChangeXml.avtSnapshot(renderer) }
@@ -128,24 +134,20 @@ class DmrStack(
     }
 
     /**
-     * 自检（M-D）：栈声明 started 但 HTTP 已无法服务（ROM 冻结/端口被杀/线程死亡）→
+     * 自检（M-D）：栈声明 started 但 HTTP 端口已死（ROM 冻结/端口被杀/accept 线程崩）→
      * 返回 false，调用方应 shutdown 后重新 start。真机教训：TCL 上出现过
      * 进程活着但端口全失、重启 App 才恢复的死态。
+     * 只做 TCP connect 探测：完整 HTTP 往返会被偶发的线程池繁忙误判成不健康，
+     * 触发无谓的整栈重建（重启期间控制点全部失联）。
      */
     fun isHealthy(): Boolean {
         if (!started) return true // 未启动不算病（watchdog 会在有网时拉起）
         val ip = boundIp ?: return false
         return try {
-            val s = java.net.Socket()
-            s.connect(java.net.InetSocketAddress(ip, httpPort), 1500)
-            s.getOutputStream().apply {
-                write(("GET /dd.xml HTTP/1.1\r\nHost: $ip:$httpPort\r\nConnection: close\r\n\r\n").toByteArray())
-                flush()
+            java.net.Socket().use { s ->
+                s.connect(java.net.InetSocketAddress(ip, httpPort), 2500)
+                true
             }
-            s.soTimeout = 2000
-            val first = s.getInputStream().read()
-            s.close()
-            first == 'H'.code // "HTTP/1.1 200 OK"
         } catch (_: Exception) {
             false
         }

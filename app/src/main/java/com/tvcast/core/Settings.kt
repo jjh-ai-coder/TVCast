@@ -28,11 +28,17 @@ class Settings(context: Context) {
     get() = sp.getBoolean(KEY_AUTO_START, true)
     set(value) = sp.edit().putBoolean(KEY_AUTO_START, value).apply()
 
+  /** DMR HTTP 粘性端口（0=尚未绑定过）：控制点缓存 LOCATION，端口必须跨重启稳定 */
+  var dmrHttpPort: Int
+    get() = sp.getInt(KEY_DMR_PORT, 0)
+    set(value) = sp.edit().putInt(KEY_DMR_PORT, value).apply()
+
   private fun defaultDeviceName(): String = "TVCast-" + udn.removePrefix("uuid:").takeLast(4).uppercase()
 
   companion object {
     private const val KEY_UDN = "udn"
     private const val KEY_DEVICE_NAME = "device_name"
     private const val KEY_AUTO_START = "auto_start"
+    private const val KEY_DMR_PORT = "dmr_http_port"
   }
 }

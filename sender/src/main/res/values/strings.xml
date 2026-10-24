@@ -28,6 +28,7 @@
     <string name="state_buffering">缓冲中…</string>
     <string name="state_no_media">未在播放</string>
     <string name="device_offline">设备离线或断开</string>
+    <string name="reconnecting">连接不稳定，正在重连电视…</string>
     <string name="local_server_failed">本地媒体服务启动失败</string>
     <string name="action_failed">操作失败（%1$d：%2$s）</string>
     <string name="action_failed_short">操作失败（%1$s）</string>

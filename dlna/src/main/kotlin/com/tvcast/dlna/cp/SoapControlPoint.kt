@@ -39,6 +39,9 @@ class SoapControlPoint(private val log: (String) -> Unit = {}) {
         doOutput = true
         setRequestProperty("Content-Type", "text/xml; charset=\"utf-8\"")
         setRequestProperty("SOAPACTION", "\"$serviceType#$action\"")
+        // 接收端是单请求短连接服务器（响应即关闭）。不显式声明的话，okhttp 的
+        // 连接池可能复用已被对端关闭的连接，表现为偶发 unexpected end of stream
+        setRequestProperty("Connection", "close")
       }
       val bytes = body.toByteArray(Charsets.UTF_8)
       conn.setFixedLengthStreamingMode(bytes.size)
@@ -49,9 +52,12 @@ class SoapControlPoint(private val log: (String) -> Unit = {}) {
       if (code in 200..299) {
         parseSuccess(action, text)
       } else {
-        parseFault(text) ?: CpResult.Error("HTTP $code")
+        val fault = parseFault(text)
+        if (fault == null) log("SOAP $action HTTP $code: ${text.take(200)}")
+        fault ?: CpResult.Error("HTTP $code")
       }
     } catch (e: Exception) {
+      log("SOAP $action error: $e")
       CpResult.Error(e.message ?: e.javaClass.simpleName)
     } finally {
       conn?.disconnect()

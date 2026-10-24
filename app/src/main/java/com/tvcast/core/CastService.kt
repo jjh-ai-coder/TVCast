@@ -72,7 +72,7 @@ class CastService : Service() {
       startForeground(NOTIFICATION_ID, buildNotification())
     }
     playerController.addListener(rendererListener)
-    if (!stack.start()) {
+    if (!startStack()) {
       // 无网络：watchdog 挂着，网络恢复后由 onIpChanged 触发 start()
       Log.w(TAG, "no network at boot, waiting for NetworkWatchdog")
     }
@@ -105,7 +105,7 @@ class CastService : Service() {
             healthFails++
             Log.w(TAG, "DLNA stack unhealthy (fail #$healthFails), rebuilding")
             try { stack.shutdown() } catch (_: Exception) {}
-            if (!stack.start()) Log.w(TAG, "rebuild start failed (no network?)")
+            if (!startStack()) Log.w(TAG, "rebuild start failed (no network?)")
             else updateNotification()
           } else {
             healthFails = 0
@@ -117,6 +117,22 @@ class CastService : Service() {
         healthHandler.postDelayed(this, delay)
       }
     }, HEALTH_CHECK_MS)
+  }
+
+  /**
+   * 启动 DLNA 栈（粘性端口）：沿用上次绑定的端口，健康自愈/网络恢复重建后端口不变，
+   * 手机端缓存的地址持续有效。首次启动落到哪个端口就记住哪个。
+   * 旧版本持久化过临时端口段（32768-60999）内的端口 → 视为未粘性化，迁移到 61000 起。
+   */
+  private fun startStack(): Boolean {
+    val saved = settings.dmrHttpPort
+    val preferred = if (saved in 32768..60999) 0 else saved
+    val ok = stack.start(preferredHttpPort = preferred)
+    if (ok && stack.httpPort != saved) {
+      settings.dmrHttpPort = stack.httpPort
+      Log.i(TAG, "DMR HTTP port settled at ${stack.httpPort}")
+    }
+    return ok
   }
 
   private fun launchUi() {

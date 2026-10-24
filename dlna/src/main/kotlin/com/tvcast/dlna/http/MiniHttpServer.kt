@@ -49,7 +49,8 @@ interface HttpHandler {
 /**
  * 自研 mini HTTP server（spec §2：NanoHTTPD 对 GENA 非标准动词 SUBSCRIBE/UNSUBSCRIBE
  * 直接回 400，故只解析 request line + headers + body，方法名不设白名单）。
- * 端口策略：尝试 preferredPort（如 80，原生 ROM 必然 EACCES）→ 49152+ 高位随机 → 0 兜底。
+ * 端口策略：preferredPort>0 时依次尝试 preferred..preferred+20（控制点缓存
+ * LOCATION，端口必须跨重启稳定）→ 49152+ 高位随机 → 0 兜底。
  */
 class MiniHttpServer(private val handler: HttpHandler) {
 
@@ -62,7 +63,7 @@ class MiniHttpServer(private val handler: HttpHandler) {
     /** 返回实际绑定端口 */
     fun start(preferredPort: Int = 0): Int {
         check(serverSocket == null) { "MiniHttpServer already started" }
-        val socket = bind(preferredPort)
+        val socket = bindRange(preferredPort)
             ?: bindHighRandom()
             ?: bind(0)
             ?: throw IllegalStateException("MiniHttpServer: no port available")
@@ -80,6 +81,24 @@ class MiniHttpServer(private val handler: HttpHandler) {
         executor?.shutdownNow()
         executor = null
         serverSocket = null
+    }
+
+    private fun bindRange(preferredPort: Int): ServerSocket? {
+        if (preferredPort <= 0) return null
+        // 首选端口先重试几轮：整栈重建时自家旧监听可能尚未完全释放（TIME_WAIT/半开连接），
+        // 立刻顺延会积累端口漂移；短暂等待通常就能绑回原端口
+        repeat(3) {
+            bind(preferredPort)?.let { return it }
+            try {
+                Thread.sleep(400)
+            } catch (_: InterruptedException) {
+                return null
+            }
+        }
+        repeat(20) { offset ->
+            bind(preferredPort + 1 + offset)?.let { return it }
+        }
+        return null
     }
 
     private fun bind(port: Int): ServerSocket? = try {
